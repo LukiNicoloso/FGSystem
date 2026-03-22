@@ -1,10 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 
-const estadoBadge: Record<string, string> = {
-  pendiente: "bg-yellow-100 text-yellow-700",
-  confirmado: "bg-green-100 text-green-700",
-  cancelado: "bg-red-100 text-red-700",
-  completado: "bg-gray-100 text-gray-700",
+const estadoConfig: Record<string, { label: string; className: string }> = {
+  pendiente: { label: "Pendiente confirmación", className: "bg-yellow-100 text-yellow-700" },
+  confirmado: { label: "Confirmado", className: "bg-green-100 text-green-700" },
+  cancelado: { label: "Cancelado", className: "bg-red-100 text-red-700" },
 };
 
 export default async function DashboardPage() {
@@ -157,8 +156,8 @@ export default async function DashboardPage() {
                       {(t.consultorios as { nombre: string } | null)?.nombre ?? <span className="text-gray-400">—</span>}
                     </td>
                     <td className="px-5 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${estadoBadge[t.estado] ?? "bg-gray-100 text-gray-600"}`}>
-                        {t.estado}
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${estadoConfig[t.estado]?.className ?? "bg-gray-100 text-gray-600"}`}>
+                        {estadoConfig[t.estado]?.label ?? t.estado}
                       </span>
                     </td>
                   </tr>

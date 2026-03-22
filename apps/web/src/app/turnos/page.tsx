@@ -10,7 +10,7 @@ export default async function TurnosPage() {
       .select("*, pacientes(id, nombre), consultorios(id, nombre)")
       .order("fecha", { ascending: false })
       .order("hora", { ascending: true }),
-    supabase.from("pacientes").select("id, nombre").order("nombre"),
+    supabase.from("pacientes").select("id, nombre, dni").order("nombre"),
     supabase.from("consultorios").select("id, nombre").order("nombre"),
   ]);
 
