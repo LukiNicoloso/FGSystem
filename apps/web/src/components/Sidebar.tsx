@@ -16,7 +16,7 @@ export default function Sidebar() {
 
   return (
     <aside className="w-60 min-h-screen bg-white border-r border-gray-200 flex flex-col">
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className="px-6 py-4 border-b border-gray-200 flex justify-center">
         <Image src="/logo.png" alt="FGSystem" width={48} height={48} className="rounded-full object-cover w-12 h-12" />
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
