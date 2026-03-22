@@ -10,6 +10,7 @@ const navItems = [
   { href: "/pacientes", label: "Pacientes", icon: "👤" },
   { href: "/turnos", label: "Turnos", icon: "📅" },
   { href: "/plantillas", label: "Plantillas", icon: "👟" },
+  { href: "/consultorios", label: "Consultorios", icon: "🏥" },
 ];
 
 export default function Sidebar() {
