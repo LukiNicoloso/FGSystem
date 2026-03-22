@@ -34,9 +34,10 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
   const [eliminando, setEliminando] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
 
-  const pacientesFiltrados = pacientes.filter((p) =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const pacientesFiltrados = pacientes.filter((p) => {
+    const q = busqueda.toLowerCase();
+    return p.nombre.toLowerCase().includes(q) || (p.dni ?? "").includes(q);
+  });
 
   function handleEditar(p: Paciente) {
     setEditando(p);
@@ -73,7 +74,7 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
           type="text"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Buscar por nombre..."
+          placeholder="Buscar por nombre o DNI..."
           className="w-full max-w-sm border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
