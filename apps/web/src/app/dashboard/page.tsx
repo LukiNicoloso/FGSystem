@@ -1,106 +1,34 @@
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 
-const estadoConfig: Record<string, { label: string; className: string }> = {
-  pendiente: { label: "Pendiente confirmación", className: "bg-yellow-100 text-yellow-700" },
-  confirmado: { label: "Confirmado", className: "bg-green-100 text-green-700" },
-  cancelado: { label: "Cancelado", className: "bg-red-100 text-red-700" },
-};
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
 
   const ahora = new Date();
   const hoy = ahora.toISOString().split("T")[0];
-  const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString();
-  const finMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).toISOString();
+
+  const en15dias = new Date(ahora);
+  en15dias.setDate(en15dias.getDate() + 15);
+  const en15diasStr = en15dias.toISOString().split("T")[0];
 
   const [
-    { count: pacientesMes },
-    { data: pacientesPorConsultorio },
-    { count: estudiosporHacer },
-    { count: plantillasEnTaller },
-    { count: plantillasPorEntregar },
-    { data: proximosTurnos },
+    { data: plantillasProximas },
+    { data: plantillasVencidas },
   ] = await Promise.all([
     supabase
-      .from("pacientes")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", inicioMes)
-      .lte("created_at", finMes),
-    supabase
-      .from("pacientes")
-      .select("consultorios(nombre)")
-      .not("consultorio_id", "is", null),
-    supabase
-      .from("turnos")
-      .select("*", { count: "exact", head: true })
-      .in("estado", ["pendiente", "confirmado"]),
+      .from("plantillas")
+      .select("*, pacientes(id, nombre)")
+      .gte("fecha_renovacion", hoy)
+      .lte("fecha_renovacion", en15diasStr)
+      .order("fecha_renovacion", { ascending: true }),
     supabase
       .from("plantillas")
-      .select("*", { count: "exact", head: true })
-      .eq("estado", "en_taller"),
-    supabase
-      .from("plantillas")
-      .select("*", { count: "exact", head: true })
-      .eq("estado", "lista_para_entrega"),
-    supabase
-      .from("turnos")
-      .select("*, pacientes(nombre), consultorios(nombre)")
-      .in("estado", ["pendiente", "confirmado"])
-      .gte("fecha", hoy)
-      .order("fecha", { ascending: true })
-      .order("hora", { ascending: true })
-      .limit(8),
+      .select("*, pacientes(id, nombre)")
+      .lt("fecha_renovacion", hoy)
+      .order("fecha_renovacion", { ascending: true }),
   ]);
-
-  // Calcular centro con más pacientes
-  const conteo: Record<string, number> = {};
-  for (const p of pacientesPorConsultorio ?? []) {
-    const nombre = (p.consultorios as unknown as { nombre: string } | null)?.nombre;
-    if (nombre) conteo[nombre] = (conteo[nombre] ?? 0) + 1;
-  }
-  const centroTop = Object.entries(conteo).sort((a, b) => b[1] - a[1])[0];
-
-  const mesNombre = ahora.toLocaleString("es-AR", { month: "long", year: "numeric" });
-
-  const cards = [
-    {
-      titulo: "Pacientes nuevos en " + mesNombre,
-      valor: pacientesMes ?? 0,
-      icon: "👤",
-      colorTexto: "text-blue-700",
-      iconBg: "bg-blue-100",
-    },
-    {
-      titulo: "Centro con más pacientes",
-      valor: centroTop ? centroTop[0] : "—",
-      subtitulo: centroTop ? `${centroTop[1]} paciente${centroTop[1] !== 1 ? "s" : ""}` : undefined,
-      icon: "🏥",
-      colorTexto: "text-purple-700",
-      iconBg: "bg-purple-100",
-    },
-    {
-      titulo: "Estudios por realizar",
-      valor: estudiosporHacer ?? 0,
-      icon: "📅",
-      colorTexto: "text-yellow-700",
-      iconBg: "bg-yellow-100",
-    },
-    {
-      titulo: "Plantillas en taller",
-      valor: plantillasEnTaller ?? 0,
-      icon: "🔧",
-      colorTexto: "text-orange-700",
-      iconBg: "bg-orange-100",
-    },
-    {
-      titulo: "Plantillas por entregar",
-      valor: plantillasPorEntregar ?? 0,
-      icon: "📦",
-      colorTexto: "text-green-700",
-      iconBg: "bg-green-100",
-    },
-  ];
 
   return (
     <div>
@@ -109,26 +37,15 @@ export default async function DashboardPage() {
         <p className="text-sm text-gray-500 mt-0.5">Resumen general del sistema</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {cards.map((card) => (
-          <div key={card.titulo} className="bg-white rounded-xl border border-gray-200 p-6 flex items-start gap-4">
-            <div className={`${card.iconBg} rounded-xl p-3 text-2xl`}>{card.icon}</div>
-            <div>
-              <p className="text-sm text-gray-500">{card.titulo}</p>
-              <p className={`text-3xl font-bold mt-1 ${card.colorTexto}`}>{card.valor}</p>
-              {card.subtitulo && <p className="text-xs text-gray-400 mt-0.5">{card.subtitulo}</p>}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Próximos turnos */}
+      {/* Plantillas próximas a vencer */}
       <div className="mt-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Próximos turnos</h2>
-        {!proximosTurnos || proximosTurnos.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 py-12 text-center text-gray-400">
-            <p className="text-3xl mb-2">📅</p>
-            <p className="text-sm">No hay turnos próximos.</p>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Plantillas próximas a vencer
+          <span className="ml-2 text-sm font-normal text-gray-400">(próximos 15 días)</span>
+        </h2>
+        {!plantillasProximas || plantillasProximas.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 py-10 text-center text-gray-400">
+            <p className="text-2xl mb-2">✅</p>
+            <p className="text-sm">No hay plantillas por vencer en los próximos 15 días.</p>
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -136,32 +53,88 @@ export default async function DashboardPage() {
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Paciente</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-600">Fecha</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-600">Hora</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-600">Consultorio</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-600">Estado</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Vence</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Días restantes</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {proximosTurnos.map((t) => (
-                  <tr key={t.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3 font-medium text-gray-900">
-                      {(t.pacientes as { nombre: string } | null)?.nombre ?? "—"}
-                    </td>
-                    <td className="px-5 py-3 text-gray-600">
-                      {new Date(t.fecha + "T00:00:00").toLocaleDateString("es-AR")}
-                    </td>
-                    <td className="px-5 py-3 text-gray-600">{t.hora.slice(0, 5)}</td>
-                    <td className="px-5 py-3 text-gray-600">
-                      {(t.consultorios as { nombre: string } | null)?.nombre ?? <span className="text-gray-400">—</span>}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${estadoConfig[t.estado]?.className ?? "bg-gray-100 text-gray-600"}`}>
-                        {estadoConfig[t.estado]?.label ?? t.estado}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {plantillasProximas.map((p) => {
+                  const paciente = p.pacientes as { id: string; nombre: string } | null;
+                  const dias = Math.round(
+                    (new Date(p.fecha_renovacion + "T00:00:00").getTime() - new Date(hoy + "T00:00:00").getTime()) /
+                    (1000 * 60 * 60 * 24)
+                  );
+                  return (
+                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-5 py-3 font-medium text-gray-900">
+                        {paciente ? (
+                          <Link href={`/pacientes/${paciente.id}`} className="hover:text-blue-600 hover:underline">
+                            {paciente.nombre}
+                          </Link>
+                        ) : "—"}
+                      </td>
+                      <td className="px-5 py-3 text-gray-600">
+                        {new Date(p.fecha_renovacion + "T00:00:00").toLocaleDateString("es-AR")}
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                          {dias === 0 ? "Hoy" : `${dias} día${dias !== 1 ? "s" : ""}`}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Plantillas vencidas */}
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Plantillas vencidas</h2>
+        {!plantillasVencidas || plantillasVencidas.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 py-10 text-center text-gray-400">
+            <p className="text-2xl mb-2">✅</p>
+            <p className="text-sm">No hay plantillas vencidas.</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Paciente</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Venció</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Hace</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {plantillasVencidas.map((p) => {
+                  const paciente = p.pacientes as { id: string; nombre: string } | null;
+                  const dias = Math.round(
+                    (new Date(hoy + "T00:00:00").getTime() - new Date(p.fecha_renovacion + "T00:00:00").getTime()) /
+                    (1000 * 60 * 60 * 24)
+                  );
+                  return (
+                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-5 py-3 font-medium text-gray-900">
+                        {paciente ? (
+                          <Link href={`/pacientes/${paciente.id}`} className="hover:text-blue-600 hover:underline">
+                            {paciente.nombre}
+                          </Link>
+                        ) : "—"}
+                      </td>
+                      <td className="px-5 py-3 text-gray-600">
+                        {new Date(p.fecha_renovacion + "T00:00:00").toLocaleDateString("es-AR")}
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          Hace {dias} día{dias !== 1 ? "s" : ""}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

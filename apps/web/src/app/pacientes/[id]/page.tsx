@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import HistorialActions from "./HistorialActions";
+import FotoViewer from "./FotoViewer";
 
 const estadoConfig: Record<string, { label: string; className: string }> = {
   en_taller: { label: "En taller", className: "bg-orange-100 text-orange-700" },
@@ -13,7 +14,7 @@ const estadoConfig: Record<string, { label: string; className: string }> = {
 function diasParaRenovacion(fechaEntrega: string | null, fechaCreacion: string): { dias: number; fecha: string } {
   const base = fechaEntrega ? new Date(fechaEntrega + "T00:00:00") : new Date(fechaCreacion);
   const renovacion = new Date(base);
-  renovacion.setFullYear(renovacion.getFullYear() + 1);
+  renovacion.setMonth(renovacion.getMonth() + 10);
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const dias = Math.round((renovacion.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
@@ -183,10 +184,7 @@ export default async function HistorialPacientePage({ params }: { params: Promis
                     </td>
                     <td className="px-5 py-3">
                       {p.foto_url ? (
-                        <a href={p.foto_url} target="_blank" rel="noopener noreferrer">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={p.foto_url} alt="Pisada" className="w-12 h-12 object-cover rounded-lg border border-gray-200 hover:opacity-80 transition-opacity" />
-                        </a>
+                        <FotoViewer url={p.foto_url} />
                       ) : (
                         <span className="text-gray-400">—</span>
                       )}
