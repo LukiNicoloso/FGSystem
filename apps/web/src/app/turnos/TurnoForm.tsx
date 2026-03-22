@@ -18,6 +18,8 @@ interface Props {
   pacientes: Paciente[];
   consultorios: Consultorio[];
   turno?: Turno;
+  fechaDefault?: string;
+  horaDefault?: string;
   onClose: () => void;
 }
 
@@ -27,7 +29,7 @@ const estados = [
   { value: "cancelado", label: "Cancelado" },
 ];
 
-export default function TurnoForm({ pacientes, consultorios, turno, onClose }: Props) {
+export default function TurnoForm({ pacientes, consultorios, turno, fechaDefault, horaDefault, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -144,7 +146,7 @@ export default function TurnoForm({ pacientes, consultorios, turno, onClose }: P
               <input
                 type="date"
                 name="fecha"
-                defaultValue={turno?.fecha}
+                defaultValue={turno?.fecha ?? fechaDefault}
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -154,7 +156,7 @@ export default function TurnoForm({ pacientes, consultorios, turno, onClose }: P
               <input
                 type="time"
                 name="hora"
-                defaultValue={turno?.hora?.slice(0, 5)}
+                defaultValue={turno?.hora?.slice(0, 5) ?? horaDefault}
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
