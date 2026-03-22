@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import HistorialActions from "./HistorialActions";
 
 const estadoConfig: Record<string, { label: string; className: string }> = {
   en_taller: { label: "En taller", className: "bg-orange-100 text-orange-700" },
@@ -23,7 +24,7 @@ export default async function HistorialPacientePage({ params }: { params: Promis
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: paciente }, { data: plantillas }] = await Promise.all([
+  const [{ data: paciente }, { data: plantillas }, { data: todosPacientes }] = await Promise.all([
     supabase
       .from("pacientes")
       .select("*, consultorios(nombre)")
@@ -34,6 +35,7 @@ export default async function HistorialPacientePage({ params }: { params: Promis
       .select("*")
       .eq("paciente_id", id)
       .order("created_at", { ascending: false }),
+    supabase.from("pacientes").select("id, nombre").order("nombre"),
   ]);
 
   if (!paciente) notFound();
@@ -106,7 +108,10 @@ export default async function HistorialPacientePage({ params }: { params: Promis
       </div>
 
       {/* Historial */}
-      <h2 className="text-lg font-semibold text-gray-900 mb-3">Historial completo</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-semibold text-gray-900">Historial completo</h2>
+        <HistorialActions pacienteId={id} pacientes={todosPacientes ?? []} />
+      </div>
       {!plantillas || plantillas.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 py-12 text-center text-gray-400">
           <p className="text-3xl mb-2">👟</p>
@@ -123,6 +128,7 @@ export default async function HistorialPacientePage({ params }: { params: Promis
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Renovación</th>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Tiempo restante</th>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Notas</th>
+                <th className="text-left px-5 py-3 font-medium text-gray-600">Foto pisada</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -168,8 +174,22 @@ export default async function HistorialPacientePage({ params }: { params: Promis
                         <span className="text-gray-400">—</span>
                       )}
                     </td>
-                    <td className="px-5 py-3 text-gray-500 max-w-xs truncate">
-                      {p.notas ?? <span className="text-gray-400">—</span>}
+                    <td className="px-5 py-3 text-gray-500 max-w-xs">
+                      {p.notas ? (
+                        <span className="block whitespace-pre-wrap text-xs">{p.notas}</span>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3">
+                      {p.foto_url ? (
+                        <a href={p.foto_url} target="_blank" rel="noopener noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={p.foto_url} alt="Pisada" className="w-12 h-12 object-cover rounded-lg border border-gray-200 hover:opacity-80 transition-opacity" />
+                        </a>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
                     </td>
                   </tr>
                 );
