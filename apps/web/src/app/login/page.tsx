@@ -16,6 +16,7 @@ export default function LoginPage() {
     try {
       await login(formData);
     } catch (err) {
+      if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
       setError(err instanceof Error ? err.message : "Error inesperado");
       setLoading(false);
     }
