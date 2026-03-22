@@ -157,7 +157,7 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
             </div>
 
             {/* Cabecera días */}
-            <div className="grid grid-cols-7 mb-2">
+            <div className="grid grid-cols-7 gap-1 mb-2">
               {DIAS_SEMANA.map((d) => (
                 <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
               ))}
