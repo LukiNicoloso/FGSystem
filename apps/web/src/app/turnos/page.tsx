@@ -1,12 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import TurnosClient from "./TurnosClient";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export default async function TurnosPage() {
+  const supabase = await createClient();
+
   const [{ data: turnos }, { data: pacientes }, { data: consultorios }] = await Promise.all([
     supabase
       .from("turnos")

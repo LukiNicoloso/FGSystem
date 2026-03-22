@@ -1,12 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import PlantillasClient from "./PlantillasClient";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export default async function PlantillasPage() {
+  const supabase = await createClient();
+
   const [{ data: plantillas }, { data: pacientes }] = await Promise.all([
     supabase
       .from("plantillas")

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout } from "@/app/login/actions";
 
 const navItems = [
   { href: "/pacientes", label: "Pacientes", icon: "👤" },
@@ -37,6 +38,17 @@ export default function Sidebar() {
           );
         })}
       </nav>
+      <div className="px-3 py-4 border-t border-gray-200">
+        <form action={logout}>
+          <button
+            type="submit"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            <span className="text-base">🚪</span>
+            Cerrar sesión
+          </button>
+        </form>
+      </div>
     </aside>
   );
 }

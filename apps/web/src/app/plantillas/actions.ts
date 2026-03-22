@@ -1,14 +1,10 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export async function crearPlantilla(formData: FormData) {
+  const supabase = await createClient();
   const { error } = await supabase.from("plantillas").insert({
     paciente_id: formData.get("paciente_id"),
     estado: formData.get("estado") || "en_taller",
@@ -21,6 +17,7 @@ export async function crearPlantilla(formData: FormData) {
 }
 
 export async function editarPlantilla(id: string, formData: FormData) {
+  const supabase = await createClient();
   const { error } = await supabase
     .from("plantillas")
     .update({
@@ -36,6 +33,7 @@ export async function editarPlantilla(id: string, formData: FormData) {
 }
 
 export async function eliminarPlantilla(id: string) {
+  const supabase = await createClient();
   const { error } = await supabase.from("plantillas").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/plantillas");
