@@ -13,6 +13,7 @@ interface Consultorio {
 interface Paciente {
   id: string;
   nombre: string;
+  dni: string | null;
   celular: string;
   consultorio_id: string | null;
   edad: number | null;
@@ -88,6 +89,7 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Nombre</th>
+                <th className="text-left px-5 py-3 font-medium text-gray-600">DNI</th>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Edad</th>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Celular</th>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Consultorio</th>
@@ -103,6 +105,7 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
                       {p.nombre}
                     </Link>
                   </td>
+                  <td className="px-5 py-3 text-gray-600">{p.dni ?? <span className="text-gray-400">—</span>}</td>
                   <td className="px-5 py-3 text-gray-600">{p.edad ?? <span className="text-gray-400">—</span>}</td>
                   <td className="px-5 py-3 text-gray-600">{p.celular}</td>
                   <td className="px-5 py-3 text-gray-600">

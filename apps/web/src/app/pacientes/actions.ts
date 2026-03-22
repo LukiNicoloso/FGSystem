@@ -8,6 +8,7 @@ export async function crearPaciente(formData: FormData) {
   const deporte = formData.get("deporte") === "on";
   const { error } = await supabase.from("pacientes").insert({
     nombre: formData.get("nombre"),
+    dni: formData.get("dni") || null,
     celular: formData.get("celular"),
     consultorio_id: formData.get("consultorio_id") || null,
     edad: formData.get("edad") ? Number(formData.get("edad")) : null,
@@ -26,6 +27,7 @@ export async function editarPaciente(id: string, formData: FormData) {
     .from("pacientes")
     .update({
       nombre: formData.get("nombre"),
+      dni: formData.get("dni") || null,
       celular: formData.get("celular"),
       consultorio_id: formData.get("consultorio_id") || null,
       edad: formData.get("edad") ? Number(formData.get("edad")) : null,

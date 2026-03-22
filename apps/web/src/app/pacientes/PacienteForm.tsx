@@ -11,6 +11,7 @@ interface Consultorio {
 interface Paciente {
   id: string;
   nombre: string;
+  dni: string | null;
   celular: string;
   consultorio_id: string | null;
   edad: number | null;
@@ -68,17 +69,28 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Edad</label>
-            <input
-              name="edad"
-              type="number"
-              min={0}
-              max={120}
-              defaultValue={paciente?.edad ?? ""}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ej: 35"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">DNI</label>
+              <input
+                name="dni"
+                defaultValue={paciente?.dni ?? ""}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ej: 38123456"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Edad</label>
+              <input
+                name="edad"
+                type="number"
+                min={0}
+                max={120}
+                defaultValue={paciente?.edad ?? ""}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ej: 35"
+              />
+            </div>
           </div>
 
           <div>

@@ -52,7 +52,11 @@ export default async function HistorialPacientePage({ params }: { params: Promis
       </div>
 
       {/* Info del paciente */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6 grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm">
+        <div>
+          <p className="text-gray-400 text-xs mb-0.5">DNI</p>
+          <p className="font-medium text-gray-900">{paciente.dni ?? "—"}</p>
+        </div>
         <div>
           <p className="text-gray-400 text-xs mb-0.5">Edad</p>
           <p className="font-medium text-gray-900">{paciente.edad ?? "—"}</p>
