@@ -174,13 +174,13 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
 
                 return (
                   <button key={i} onClick={() => setDiaSeleccionado(esSel ? null : fechaStr)}
-                    className={`min-h-[64px] p-1.5 rounded-xl flex flex-col items-start text-left transition-colors ${
+                    className={`min-h-[64px] p-1.5 rounded-xl flex flex-col items-center transition-colors ${
                       esSel ? "bg-blue-600" : esHoy ? "bg-blue-50" : "hover:bg-gray-50"
                     }`}>
                     <span className={`text-xs font-semibold mb-1 ${esSel ? "text-white" : esHoy ? "text-blue-700" : "text-gray-700"}`}>
                       {dia}
                     </span>
-                    <div className="flex flex-wrap gap-0.5">
+                    <div className="flex flex-wrap gap-0.5 justify-center">
                       {turnosDia.slice(0, 5).map((t) => {
                         const ci = t.consultorio_id ? (colorMap[t.consultorio_id] ?? 0) : 0;
                         return (
