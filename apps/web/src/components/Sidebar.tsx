@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/login/actions";
 
@@ -15,9 +16,8 @@ export default function Sidebar() {
 
   return (
     <aside className="w-60 min-h-screen bg-white border-r border-gray-200 flex flex-col">
-      <div className="px-6 py-5 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900">FGSystem</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Gestión de plantillas</p>
+      <div className="px-6 py-4 border-b border-gray-200">
+        <Image src="/logo.png" alt="FGSystem" width={160} height={60} className="object-contain" />
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => {
