@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { logout } from "@/app/login/actions";
 
 const navItems = [
+  { href: "/dashboard", label: "Dashboard", icon: "📊" },
   { href: "/pacientes", label: "Pacientes", icon: "👤" },
   { href: "/turnos", label: "Turnos", icon: "📅" },
   { href: "/plantillas", label: "Plantillas", icon: "👟" },

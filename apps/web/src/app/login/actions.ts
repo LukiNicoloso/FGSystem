@@ -13,7 +13,7 @@ export async function login(formData: FormData) {
 
   if (error) throw new Error("Email o contraseña incorrectos");
 
-  redirect("/pacientes");
+  redirect("/dashboard");
 }
 
 export async function logout() {
