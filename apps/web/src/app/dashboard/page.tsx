@@ -57,7 +57,7 @@ export default async function DashboardPage() {
   // Calcular centro con más pacientes
   const conteo: Record<string, number> = {};
   for (const p of pacientesPorConsultorio ?? []) {
-    const nombre = (p.consultorios as { nombre: string } | null)?.nombre;
+    const nombre = (p.consultorios as unknown as { nombre: string } | null)?.nombre;
     if (nombre) conteo[nombre] = (conteo[nombre] ?? 0) + 1;
   }
   const centroTop = Object.entries(conteo).sort((a, b) => b[1] - a[1])[0];
