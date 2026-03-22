@@ -1,9 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 
+const estadoBadge: Record<string, string> = {
+  pendiente: "bg-yellow-100 text-yellow-700",
+  confirmado: "bg-green-100 text-green-700",
+  cancelado: "bg-red-100 text-red-700",
+  completado: "bg-gray-100 text-gray-700",
+};
+
 export default async function DashboardPage() {
   const supabase = await createClient();
 
   const ahora = new Date();
+  const hoy = ahora.toISOString().split("T")[0];
   const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString();
   const finMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).toISOString();
 
@@ -13,6 +21,7 @@ export default async function DashboardPage() {
     { count: estudiosporHacer },
     { count: plantillasEnTaller },
     { count: plantillasPorEntregar },
+    { data: proximosTurnos },
   ] = await Promise.all([
     supabase
       .from("pacientes")
@@ -35,6 +44,14 @@ export default async function DashboardPage() {
       .from("plantillas")
       .select("*", { count: "exact", head: true })
       .eq("estado", "lista_para_entrega"),
+    supabase
+      .from("turnos")
+      .select("*, pacientes(nombre), consultorios(nombre)")
+      .in("estado", ["pendiente", "confirmado"])
+      .gte("fecha", hoy)
+      .order("fecha", { ascending: true })
+      .order("hora", { ascending: true })
+      .limit(8),
   ]);
 
   // Calcular centro con más pacientes
@@ -52,7 +69,7 @@ export default async function DashboardPage() {
       titulo: "Pacientes nuevos en " + mesNombre,
       valor: pacientesMes ?? 0,
       icon: "👤",
-      color: "bg-blue-50 text-blue-700",
+      colorTexto: "text-blue-700",
       iconBg: "bg-blue-100",
     },
     {
@@ -60,28 +77,28 @@ export default async function DashboardPage() {
       valor: centroTop ? centroTop[0] : "—",
       subtitulo: centroTop ? `${centroTop[1]} paciente${centroTop[1] !== 1 ? "s" : ""}` : undefined,
       icon: "🏥",
-      color: "bg-purple-50 text-purple-700",
+      colorTexto: "text-purple-700",
       iconBg: "bg-purple-100",
     },
     {
       titulo: "Estudios por realizar",
       valor: estudiosporHacer ?? 0,
       icon: "📅",
-      color: "bg-yellow-50 text-yellow-700",
+      colorTexto: "text-yellow-700",
       iconBg: "bg-yellow-100",
     },
     {
       titulo: "Plantillas en taller",
       valor: plantillasEnTaller ?? 0,
       icon: "🔧",
-      color: "bg-orange-50 text-orange-700",
+      colorTexto: "text-orange-700",
       iconBg: "bg-orange-100",
     },
     {
       titulo: "Plantillas por entregar",
       valor: plantillasPorEntregar ?? 0,
       icon: "📦",
-      color: "bg-green-50 text-green-700",
+      colorTexto: "text-green-700",
       iconBg: "bg-green-100",
     },
   ];
@@ -95,24 +112,61 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {cards.map((card) => (
-          <div
-            key={card.titulo}
-            className="bg-white rounded-xl border border-gray-200 p-6 flex items-start gap-4"
-          >
-            <div className={`${card.iconBg} rounded-xl p-3 text-2xl`}>
-              {card.icon}
-            </div>
+          <div key={card.titulo} className="bg-white rounded-xl border border-gray-200 p-6 flex items-start gap-4">
+            <div className={`${card.iconBg} rounded-xl p-3 text-2xl`}>{card.icon}</div>
             <div>
               <p className="text-sm text-gray-500">{card.titulo}</p>
-              <p className={`text-3xl font-bold mt-1 ${card.color.split(" ")[1]}`}>
-                {card.valor}
-              </p>
-              {card.subtitulo && (
-                <p className="text-xs text-gray-400 mt-0.5">{card.subtitulo}</p>
-              )}
+              <p className={`text-3xl font-bold mt-1 ${card.colorTexto}`}>{card.valor}</p>
+              {card.subtitulo && <p className="text-xs text-gray-400 mt-0.5">{card.subtitulo}</p>}
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Próximos turnos */}
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Próximos turnos</h2>
+        {!proximosTurnos || proximosTurnos.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 py-12 text-center text-gray-400">
+            <p className="text-3xl mb-2">📅</p>
+            <p className="text-sm">No hay turnos próximos.</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Paciente</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Fecha</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Hora</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Consultorio</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {proximosTurnos.map((t) => (
+                  <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-5 py-3 font-medium text-gray-900">
+                      {(t.pacientes as { nombre: string } | null)?.nombre ?? "—"}
+                    </td>
+                    <td className="px-5 py-3 text-gray-600">
+                      {new Date(t.fecha + "T00:00:00").toLocaleDateString("es-AR")}
+                    </td>
+                    <td className="px-5 py-3 text-gray-600">{t.hora.slice(0, 5)}</td>
+                    <td className="px-5 py-3 text-gray-600">
+                      {(t.consultorios as { nombre: string } | null)?.nombre ?? <span className="text-gray-400">—</span>}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${estadoBadge[t.estado] ?? "bg-gray-100 text-gray-600"}`}>
+                        {t.estado}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
