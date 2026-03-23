@@ -1,11 +1,11 @@
 "use client";
 
-const MENSAJE_KINEST = `Estimado paciente, le informamos que sus plantillas ortopédicas están próximas a vencer ⚠️ . Le recomendamos solicitar un turno para la renovación y un chequeo anual. Puede gestionar su turno enviando un mensaje por WhatsApp al siguiente teléfono KINEST 👇
+const MENSAJE_KINEST = `Estimado paciente, le informamos que sus plantillas ortopédicas están próximas a vencer. Le recomendamos solicitar un turno para la renovación y un chequeo anual. Puede gestionar su turno enviando un mensaje por WhatsApp al siguiente teléfono KINEST:
 +54 9 11 6567-1472
 
 Las renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`;
 
-const MENSAJE_GENERICO = `Estimado paciente, le informamos que sus plantillas ortopédicas están próximas a vencer ⚠️ . Le recomendamos solicitar un turno para la renovación y un chequeo anual. Puede gestionar su turno respondiendo a este WhatsApp.
+const MENSAJE_GENERICO = `Estimado paciente, le informamos que sus plantillas ortopédicas están próximas a vencer. Le recomendamos solicitar un turno para la renovación y un chequeo anual. Puede gestionar su turno respondiendo a este WhatsApp.
 
 Las renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`;
 
