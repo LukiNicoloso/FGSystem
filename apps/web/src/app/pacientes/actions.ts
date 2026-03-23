@@ -15,6 +15,7 @@ export async function crearPaciente(formData: FormData) {
     deporte,
     deporte_descripcion: deporte ? (formData.get("deporte_descripcion") || null) : null,
     diabetico: formData.get("diabetico") === "on",
+    sexo: formData.get("sexo") || null,
   });
   if (error) throw new Error(error.message);
   revalidatePath("/pacientes");
@@ -34,6 +35,7 @@ export async function editarPaciente(id: string, formData: FormData) {
       deporte,
       deporte_descripcion: deporte ? (formData.get("deporte_descripcion") || null) : null,
       diabetico: formData.get("diabetico") === "on",
+      sexo: formData.get("sexo") || null,
     })
     .eq("id", id);
   if (error) throw new Error(error.message);

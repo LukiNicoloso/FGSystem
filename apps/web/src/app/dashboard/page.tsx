@@ -22,13 +22,13 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabase
       .from("plantillas")
-      .select("*, pacientes(id, nombre, celular, consultorios(nombre))")
+      .select("*, pacientes(id, nombre, celular, sexo, consultorios(nombre))")
       .lte("fecha_renovacion", en15diasStr)
       .is("estado_contacto", null)
       .order("fecha_renovacion", { ascending: true }),
     supabase
       .from("plantillas")
-      .select("*, pacientes(id, nombre, celular, consultorios(nombre))")
+      .select("*, pacientes(id, nombre, celular, sexo, consultorios(nombre))")
       .eq("estado_contacto", "contactado")
       .order("fecha_renovacion", { ascending: true }),
     supabase
@@ -75,7 +75,7 @@ function DiasTag({ dias }: { dias: number }) {
             {!porContactar?.length ? (
               <p className="text-sm text-gray-400 text-center py-8">Sin pacientes pendientes ✅</p>
             ) : porContactar.map((p) => {
-              const paciente = p.pacientes as { id: string; nombre: string; celular: string; consultorios: { nombre: string } | null } | null;
+              const paciente = p.pacientes as { id: string; nombre: string; celular: string; sexo: string | null; consultorios: { nombre: string } | null } | null;
               const dias = diasRestantes(p.fecha_renovacion);
               return (
                 <div key={p.id} className="bg-white rounded-lg border border-gray-200 p-3 space-y-2.5">
@@ -88,7 +88,7 @@ function DiasTag({ dias }: { dias: number }) {
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    <WaButton celular={paciente?.celular} consultorio={paciente?.consultorios?.nombre} nombre={paciente?.nombre} />
+                    <WaButton celular={paciente?.celular} consultorio={paciente?.consultorios?.nombre} nombre={paciente?.nombre} sexo={paciente?.sexo} />
                     <AccionButton
                       action={actualizarEstadoContacto.bind(null, p.id, "contactado")}
                       label="✓ Contactado"
@@ -113,7 +113,7 @@ function DiasTag({ dias }: { dias: number }) {
             {!contactados?.length ? (
               <p className="text-sm text-gray-400 text-center py-8">Sin pacientes contactados</p>
             ) : contactados.map((p) => {
-              const paciente = p.pacientes as { id: string; nombre: string; celular: string; consultorios: { nombre: string } | null } | null;
+              const paciente = p.pacientes as { id: string; nombre: string; celular: string; sexo: string | null; consultorios: { nombre: string } | null } | null;
               const dias = diasRestantes(p.fecha_renovacion);
               return (
                 <div key={p.id} className="bg-white rounded-lg border border-gray-200 p-3 space-y-2.5">
@@ -126,7 +126,7 @@ function DiasTag({ dias }: { dias: number }) {
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    <WaButton celular={paciente?.celular} consultorio={paciente?.consultorios?.nombre} nombre={paciente?.nombre} label="Reenviar" />
+                    <WaButton celular={paciente?.celular} consultorio={paciente?.consultorios?.nombre} nombre={paciente?.nombre} sexo={paciente?.sexo} label="Reenviar" />
                     <AccionButton
                       action={actualizarEstadoContacto.bind(null, p.id, "agendado")}
                       label="✓ Agendado"

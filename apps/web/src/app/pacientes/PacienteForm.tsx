@@ -18,6 +18,7 @@ interface Paciente {
   deporte: boolean;
   deporte_descripcion: string | null;
   diabetico: boolean;
+  sexo: string | null;
 }
 
 interface Props {
@@ -122,6 +123,22 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
                 <option key={c.id} value={c.id}>{c.nombre}</option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Sexo</label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="radio" name="sexo" value="M" defaultChecked={paciente?.sexo === "M" || !paciente?.sexo}
+                  className="text-blue-600 focus:ring-blue-500" />
+                Masculino
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="radio" name="sexo" value="F" defaultChecked={paciente?.sexo === "F"}
+                  className="text-blue-600 focus:ring-blue-500" />
+                Femenino
+              </label>
+            </div>
           </div>
 
           <div className="space-y-3 pt-1">

@@ -20,6 +20,7 @@ interface Paciente {
   deporte: boolean;
   deporte_descripcion: string | null;
   diabetico: boolean;
+  sexo: string | null;
   consultorios: Consultorio | null;
 }
 
