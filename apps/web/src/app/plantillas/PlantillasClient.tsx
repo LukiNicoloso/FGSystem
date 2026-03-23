@@ -69,7 +69,7 @@ export default function PlantillasClient({ plantillas, pacientes }: Props) {
           <p className="text-sm">No hay plantillas registradas aún.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">

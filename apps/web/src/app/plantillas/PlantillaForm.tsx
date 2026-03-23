@@ -53,7 +53,7 @@ export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault,
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <h2 className="text-lg font-semibold text-gray-900 mb-5">
           {plantilla ? "Editar plantilla" : esRenovacionDefault ? "Registrar renovación" : "Nueva plantilla"}
         </h2>

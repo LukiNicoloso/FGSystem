@@ -26,7 +26,7 @@ export default async function RootLayout({
     <html lang="es" className={`${geistSans.variable} h-full`}>
       <body className="h-full flex bg-gray-50">
         {user && <Sidebar />}
-        <main className={`flex-1 overflow-auto ${user ? "p-8" : ""}`}>{children}</main>
+        <main className={`flex-1 overflow-auto ${user ? "p-4 pt-16 md:p-8 md:pt-8" : ""}`}>{children}</main>
       </body>
     </html>
   );

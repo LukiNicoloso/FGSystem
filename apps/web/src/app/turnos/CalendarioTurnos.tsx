@@ -140,7 +140,7 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
 
         {/* ── Calendario mensual ── */}
         <div className={diaSeleccionado ? "lg:col-span-2" : "lg:col-span-3"}>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-white rounded-xl border border-gray-200 p-3 md:p-5 overflow-x-auto">
             {/* Navegación de mes */}
             <div className="flex items-center justify-between mb-5">
               <button onClick={() => navMes(-1)}
