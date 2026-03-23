@@ -12,7 +12,7 @@ interface Plantilla {
   notas: string | null;
   fecha_entrega: string | null;
   fecha_renovacion: string | null;
-  recordatorio_renovacion_enviado: boolean;
+  foto_url: string | null;
   pacientes: Paciente | null;
 }
 
