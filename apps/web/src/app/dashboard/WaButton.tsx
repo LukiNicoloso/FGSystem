@@ -1,27 +1,28 @@
 "use client";
 
-const MENSAJE_KINEST = `Estimado paciente, le informamos que sus plantillas ortopédicas están próximas a vencer. Le recomendamos solicitar un turno para la renovación y un chequeo anual. Puede gestionar su turno enviando un mensaje por WhatsApp al siguiente teléfono KINEST:
-+54 9 11 6567-1472
-
-Las renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`;
-
-const MENSAJE_GENERICO = `Estimado paciente, le informamos que sus plantillas ortopédicas están próximas a vencer. Le recomendamos solicitar un turno para la renovación y un chequeo anual. Puede gestionar su turno respondiendo a este WhatsApp.
-
-Las renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`;
+function buildSaludo(nombre: string | null | undefined): string {
+  const primerNombre = (nombre ?? "paciente").trim().split(/\s+/)[0];
+  const esFemenino = primerNombre.toLowerCase().endsWith("a");
+  return `${esFemenino ? "Estimada" : "Estimado"} ${primerNombre}`;
+}
 
 interface Props {
   celular: string | null | undefined;
   consultorio: string | null | undefined;
+  nombre: string | null | undefined;
   label?: string;
 }
 
-export default function WaButton({ celular, consultorio, label = "WhatsApp" }: Props) {
+export default function WaButton({ celular, consultorio, nombre, label = "WhatsApp" }: Props) {
   const num = celular?.replace(/\D/g, "");
   if (!num) return <span className="px-2.5 py-1 text-xs text-gray-400 bg-gray-100 rounded-lg">Sin celular</span>;
 
   function handleClick() {
+    const saludo = buildSaludo(nombre);
     const esKinest = consultorio?.toLowerCase().includes("kinest");
-    const msg = esKinest ? MENSAJE_KINEST : MENSAJE_GENERICO;
+    const msg = esKinest
+      ? `${saludo}, le informamos que sus plantillas ortopédicas están próximas a vencer. Le recomendamos solicitar un turno para la renovación y un chequeo anual. Puede gestionar su turno enviando un mensaje por WhatsApp al siguiente teléfono KINEST:\n+54 9 11 6567-1472\n\nLas renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`
+      : `${saludo}, le informamos que sus plantillas ortopédicas están próximas a vencer. Le recomendamos solicitar un turno para la renovación y un chequeo anual. Puede gestionar su turno respondiendo a este WhatsApp.\n\nLas renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`;
     const url = `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }
