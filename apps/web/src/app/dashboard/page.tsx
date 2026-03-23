@@ -27,13 +27,13 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabase
       .from("plantillas")
-      .select("*, pacientes(id, nombre, celular)")
+      .select("*, pacientes(id, nombre, celular, consultorios(nombre))")
       .lte("fecha_renovacion", en15diasStr)
       .is("estado_contacto", null)
       .order("fecha_renovacion", { ascending: true }),
     supabase
       .from("plantillas")
-      .select("*, pacientes(id, nombre, celular)")
+      .select("*, pacientes(id, nombre, celular, consultorios(nombre))")
       .eq("estado_contacto", "contactado")
       .order("fecha_renovacion", { ascending: true }),
     supabase
@@ -51,17 +51,14 @@ export default async function DashboardPage() {
     );
   }
 
-  function buildWaLink(celular: string | null | undefined, nombre: string, dias: number) {
+  function buildWaLink(celular: string | null | undefined, consultorio: string | null | undefined) {
     const num = celular?.replace(/\D/g, "");
     if (!num) return null;
-    const diaStr =
-      dias < 0 ? `vencida hace ${Math.abs(dias)} día${Math.abs(dias) !== 1 ? "s" : ""}` :
-      dias === 0 ? "hoy" :
-      `en ${dias} día${dias !== 1 ? "s" : ""}`;
-    const msg = encodeURIComponent(
-      `Hola ${nombre}! Te escribimos desde el consultorio para avisarte que tus plantillas podológicas están próximas a vencer (${diaStr}). ¿Te gustaría coordinar una renovación? 😊`
-    );
-    return `https://wa.me/${num}?text=${msg}`;
+    const esKinest = consultorio?.toLowerCase().includes("kinest");
+    const msg = esKinest
+      ? `Estimado paciente, le informamos que sus plantillas ortopédicas están próximas a vencer ⚠️ . Le recomendamos solicitar un turno para la renovación y un chequeo anual. Puede gestionar su turno enviando un mensaje por WhatsApp al siguiente teléfono KINEST 👇\n+54 9 11 6567-1472\n\nLas renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`
+      : `Estimado paciente, le informamos que sus plantillas ortopédicas están próximas a vencer ⚠️ . Le recomendamos solicitar un turno para la renovación y un chequeo anual. Puede gestionar su turno respondiendo a este WhatsApp.\n\nLas renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`;
+    return `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
   }
 
   function DiasTag({ dias }: { dias: number }) {
@@ -93,9 +90,9 @@ export default async function DashboardPage() {
             {!porContactar?.length ? (
               <p className="text-sm text-gray-400 text-center py-8">Sin pacientes pendientes ✅</p>
             ) : porContactar.map((p) => {
-              const paciente = p.pacientes as { id: string; nombre: string; celular: string } | null;
+              const paciente = p.pacientes as { id: string; nombre: string; celular: string; consultorios: { nombre: string } | null } | null;
               const dias = diasRestantes(p.fecha_renovacion);
-              const waLink = buildWaLink(paciente?.celular, paciente?.nombre ?? "", dias);
+              const waLink = buildWaLink(paciente?.celular, paciente?.consultorios?.nombre);
               return (
                 <div key={p.id} className="bg-white rounded-lg border border-gray-200 p-3 space-y-2.5">
                   <div>
@@ -139,8 +136,9 @@ export default async function DashboardPage() {
             {!contactados?.length ? (
               <p className="text-sm text-gray-400 text-center py-8">Sin pacientes contactados</p>
             ) : contactados.map((p) => {
-              const paciente = p.pacientes as { id: string; nombre: string } | null;
+              const paciente = p.pacientes as { id: string; nombre: string; celular: string; consultorios: { nombre: string } | null } | null;
               const dias = diasRestantes(p.fecha_renovacion);
+              const waLink = buildWaLink(paciente?.celular, paciente?.consultorios?.nombre);
               return (
                 <div key={p.id} className="bg-white rounded-lg border border-gray-200 p-3 space-y-2.5">
                   <div>
@@ -152,6 +150,12 @@ export default async function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
+                    {waLink && (
+                      <a href={waLink} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors">
+                        {WA_ICON} Reenviar
+                      </a>
+                    )}
                     <AccionButton
                       action={actualizarEstadoContacto.bind(null, p.id, "agendado")}
                       label="✓ Agendado"
