@@ -18,10 +18,11 @@ interface Props {
   pacientes: Paciente[];
   plantilla?: Plantilla;
   pacienteIdDefault?: string;
+  esRenovacionDefault?: boolean;
   onClose: () => void;
 }
 
-export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault, onClose }: Props) {
+export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault, esRenovacionDefault, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<string | null>(plantilla?.foto_url ?? null);
@@ -54,8 +55,9 @@ export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault,
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
         <h2 className="text-lg font-semibold text-gray-900 mb-5">
-          {plantilla ? "Editar plantilla" : "Nueva plantilla"}
+          {plantilla ? "Editar plantilla" : esRenovacionDefault ? "Registrar renovación" : "Nueva plantilla"}
         </h2>
+        <input type="hidden" name="es_renovacion" value={String(esRenovacionDefault ?? false)} />
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Paciente</label>

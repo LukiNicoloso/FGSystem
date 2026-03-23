@@ -4,44 +4,85 @@ import { notFound } from "next/navigation";
 import HistorialActions from "./HistorialActions";
 import FotoViewer from "./FotoViewer";
 
-const estadoConfig: Record<string, { label: string; className: string }> = {
-  en_taller: { label: "En taller", className: "bg-orange-100 text-orange-700" },
-  lista_para_entrega: { label: "Lista para entrega", className: "bg-blue-100 text-blue-700" },
-  entregada: { label: "Entregada", className: "bg-green-100 text-green-700" },
-  renovacion_pendiente: { label: "Renovación pendiente", className: "bg-purple-100 text-purple-700" },
-};
-
-function diasParaRenovacion(fechaEntrega: string | null, fechaCreacion: string): { dias: number; fecha: string } {
-  const base = fechaEntrega ? new Date(fechaEntrega + "T00:00:00") : new Date(fechaCreacion);
-  const renovacion = new Date(base);
-  renovacion.setMonth(renovacion.getMonth() + 10);
+function diasParaRenovacion(fechaRenovacion: string | null, fechaEntrega: string | null, fechaCreacion: string): { dias: number; fecha: string } {
+  let renovacion: Date;
+  if (fechaRenovacion) {
+    renovacion = new Date(fechaRenovacion + "T00:00:00");
+  } else {
+    const base = fechaEntrega ? new Date(fechaEntrega + "T00:00:00") : new Date(fechaCreacion);
+    renovacion = new Date(base);
+    renovacion.setMonth(renovacion.getMonth() + 10);
+  }
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const dias = Math.round((renovacion.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
   return { dias, fecha: renovacion.toLocaleDateString("es-AR") };
 }
 
+type Plantilla = {
+  id: string;
+  created_at: string;
+  estado: string;
+  es_renovacion: boolean;
+  fecha_entrega: string | null;
+  fecha_renovacion: string | null;
+  fecha_contactado: string | null;
+  fecha_agendado: string | null;
+  estado_contacto: string | null;
+  notas: string | null;
+  foto_url: string | null;
+};
+
+type ActivityItem =
+  | { tipo: "alta"; key: string; fecha: Date; plantilla: Plantilla }
+  | { tipo: "alta_renovacion"; key: string; fecha: Date; plantilla: Plantilla }
+  | { tipo: "contacto"; key: string; fecha: Date; plantilla: Plantilla };
+
 export default async function HistorialPacientePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
 
   const [{ data: paciente }, { data: plantillas }, { data: todosPacientes }] = await Promise.all([
-    supabase
-      .from("pacientes")
-      .select("*, consultorios(nombre)")
-      .eq("id", id)
-      .single(),
-    supabase
-      .from("plantillas")
-      .select("*")
-      .eq("paciente_id", id)
-      .order("created_at", { ascending: false }),
+    supabase.from("pacientes").select("*, consultorios(nombre)").eq("id", id).single(),
+    supabase.from("plantillas").select("*").eq("paciente_id", id).order("created_at", { ascending: false }),
     supabase.from("pacientes").select("id, nombre").order("nombre"),
   ]);
 
   if (!paciente) notFound();
 
   const consultorio = (paciente.consultorios as { nombre: string } | null)?.nombre;
+  const lista = (plantillas ?? []) as Plantilla[];
+
+  // Construir timeline de actividades
+  const activities: ActivityItem[] = [];
+  for (const p of lista) {
+    activities.push({
+      tipo: p.es_renovacion ? "alta_renovacion" : "alta",
+      key: `alta-${p.id}`,
+      fecha: new Date(p.created_at),
+      plantilla: p,
+    });
+    if (p.estado_contacto && (p.fecha_contactado || p.fecha_agendado)) {
+      const fechaContacto = p.fecha_contactado ?? p.fecha_agendado!;
+      activities.push({
+        tipo: "contacto",
+        key: `contacto-${p.id}`,
+        fecha: new Date(fechaContacto + "T00:00:00"),
+        plantilla: p,
+      });
+    }
+  }
+
+  // Orden descendente. Mismo día: alta_renovacion > contacto > alta
+  const typeWeight: Record<string, number> = { alta_renovacion: 3, contacto: 2, alta: 1 };
+  activities.sort((a, b) => {
+    const sameDay =
+      a.fecha.getFullYear() === b.fecha.getFullYear() &&
+      a.fecha.getMonth() === b.fecha.getMonth() &&
+      a.fecha.getDate() === b.fecha.getDate();
+    if (sameDay) return (typeWeight[b.tipo] ?? 0) - (typeWeight[a.tipo] ?? 0);
+    return b.fecha.getTime() - a.fecha.getTime();
+  });
 
   return (
     <div>
@@ -51,7 +92,7 @@ export default async function HistorialPacientePage({ params }: { params: Promis
           ← Volver a pacientes
         </Link>
         <h1 className="text-2xl font-bold text-gray-900 mt-2">{paciente.nombre}</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Historial de plantillas</p>
+        <p className="text-sm text-gray-500 mt-0.5">Historial de actividades</p>
       </div>
 
       {/* Info del paciente */}
@@ -89,111 +130,145 @@ export default async function HistorialPacientePage({ params }: { params: Promis
       </div>
 
       {/* Resumen */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-          <p className="text-3xl font-bold text-blue-700">{plantillas?.length ?? 0}</p>
+          <p className="text-3xl font-bold text-blue-700">{lista.length}</p>
           <p className="text-xs text-gray-500 mt-1">Plantillas realizadas</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+          <p className="text-3xl font-bold text-purple-700">
+            {lista.filter((p) => p.es_renovacion).length}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">Renovaciones</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
           <p className="text-3xl font-bold text-green-700">
-            {plantillas?.filter((p) => p.estado === "entregada").length ?? 0}
+            {lista.filter((p) => p.estado === "entregada").length}
           </p>
           <p className="text-xs text-gray-500 mt-1">Entregadas</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-          <p className="text-3xl font-bold text-orange-700">
-            {plantillas?.filter((p) => p.estado === "en_taller" || p.estado === "lista_para_entrega").length ?? 0}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">En proceso</p>
-        </div>
       </div>
 
-      {/* Historial */}
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-gray-900">Historial completo</h2>
+      {/* Timeline */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Actividades</h2>
         <HistorialActions pacienteId={id} pacientes={todosPacientes ?? []} />
       </div>
-      {!plantillas || plantillas.length === 0 ? (
+
+      {activities.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 py-12 text-center text-gray-400">
           <p className="text-3xl mb-2">👟</p>
-          <p className="text-sm">Este paciente no tiene plantillas registradas.</p>
+          <p className="text-sm">Este paciente no tiene actividades registradas.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Fecha alta</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Estado</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Entrega</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Renovación</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Tiempo restante</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Notas</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Foto pisada</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {plantillas.map((p) => {
-                const config = estadoConfig[p.estado] ?? { label: p.estado, className: "bg-gray-100 text-gray-600" };
-                const renovacion = diasParaRenovacion(p.fecha_entrega, p.created_at);
-                const soloEntregada = p.estado === "entregada";
+        <div className="relative">
+          {/* Línea vertical */}
+          <div className="absolute left-5 top-0 bottom-0 w-px bg-gray-200" />
+
+          <div className="space-y-4">
+            {activities.map((item) => {
+              if (item.tipo === "alta" || item.tipo === "alta_renovacion") {
+                const p = item.plantilla;
+                const esRenov = item.tipo === "alta_renovacion";
+                const renov = diasParaRenovacion(p.fecha_renovacion, p.fecha_entrega, p.created_at);
 
                 return (
-                  <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3 text-gray-600">
-                      {new Date(p.created_at).toLocaleDateString("es-AR")}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.className}`}>
-                        {config.label}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-gray-600">
-                      {p.fecha_entrega
-                        ? new Date(p.fecha_entrega + "T00:00:00").toLocaleDateString("es-AR")
-                        : <span className="text-gray-400">—</span>}
-                    </td>
-                    <td className="px-5 py-3 text-gray-600">
-                      {soloEntregada ? renovacion.fecha : <span className="text-gray-400">—</span>}
-                    </td>
-                    <td className="px-5 py-3">
-                      {soloEntregada ? (
-                        renovacion.dias < 0 ? (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                            Vencida hace {Math.abs(renovacion.dias)} días
+                  <div key={item.key} className="relative flex gap-4">
+                    {/* Dot */}
+                    <div className={`relative z-10 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg border-2 bg-white ${esRenov ? "border-purple-300" : "border-blue-300"}`}>
+                      {esRenov ? "♻️" : "📋"}
+                    </div>
+
+                    {/* Card */}
+                    <div className={`flex-1 bg-white rounded-xl border p-4 mb-1 ${esRenov ? "border-purple-200" : "border-gray-200"}`}>
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div>
+                          <span className={`text-sm font-semibold ${esRenov ? "text-purple-700" : "text-blue-700"}`}>
+                            {esRenov ? "Renovación de plantilla" : "Alta de plantilla"}
                           </span>
-                        ) : renovacion.dias <= 30 ? (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-                            {renovacion.dias} días
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                            {renovacion.dias} días
-                          </span>
-                        )
-                      ) : (
-                        <span className="text-gray-400">—</span>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {item.fecha.toLocaleDateString("es-AR")}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                        <div>
+                          <p className="text-gray-400 mb-0.5">Entrega</p>
+                          <p className="font-medium text-gray-700">
+                            {p.fecha_entrega ? new Date(p.fecha_entrega + "T00:00:00").toLocaleDateString("es-AR") : "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 mb-0.5">Renovación</p>
+                          <p className="font-medium text-gray-700">{renov.fecha}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 mb-0.5">Tiempo restante</p>
+                          {renov.dias < 0 ? (
+                            <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                              Vencida hace {Math.abs(renov.dias)}d
+                            </span>
+                          ) : renov.dias <= 30 ? (
+                            <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                              {renov.dias} días
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                              {renov.dias} días
+                            </span>
+                          )}
+                        </div>
+                        {p.foto_url && (
+                          <div>
+                            <p className="text-gray-400 mb-0.5">Foto pisada</p>
+                            <FotoViewer url={p.foto_url} />
+                          </div>
+                        )}
+                      </div>
+
+                      {p.notas && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <p className="text-xs text-gray-400 mb-0.5">Notas</p>
+                          <p className="text-xs text-gray-600 whitespace-pre-wrap">{p.notas}</p>
+                        </div>
                       )}
-                    </td>
-                    <td className="px-5 py-3 text-gray-500 max-w-xs">
-                      {p.notas ? (
-                        <span className="block whitespace-pre-wrap text-xs">{p.notas}</span>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3">
-                      {p.foto_url ? (
-                        <FotoViewer url={p.foto_url} />
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 );
-              })}
-            </tbody>
-          </table>
+              }
+
+              // Tipo: contacto
+              const p = item.plantilla;
+              const resultado = p.estado_contacto;
+              const resultadoConfig =
+                resultado === "agendado" ? { label: "Agendado ✓", className: "bg-green-100 text-green-700" } :
+                resultado === "no_interesado" ? { label: "No interesado ✗", className: "bg-red-100 text-red-700" } :
+                { label: "Contactado", className: "bg-blue-100 text-blue-700" };
+
+              return (
+                <div key={item.key} className="relative flex gap-4">
+                  {/* Dot */}
+                  <div className="relative z-10 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg border-2 bg-white border-yellow-300">
+                    📞
+                  </div>
+
+                  {/* Card */}
+                  <div className="flex-1 bg-white rounded-xl border border-yellow-200 p-4 mb-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <span className="text-sm font-semibold text-yellow-700">Contacto por renovación</span>
+                        <p className="text-xs text-gray-400 mt-0.5">{item.fecha.toLocaleDateString("es-AR")}</p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${resultadoConfig.className}`}>
+                        {resultadoConfig.label}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

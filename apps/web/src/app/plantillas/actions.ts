@@ -18,9 +18,10 @@ export async function crearPlantilla(formData: FormData) {
   const foto = formData.get("foto") as File | null;
   const foto_url = foto && foto.size > 0 ? await subirFoto(supabase, foto) : null;
 
-  const renovacion = new Date();
-  renovacion.setMonth(renovacion.getMonth() + 10);
-  const fecha_renovacion = renovacion.toISOString().split("T")[0];
+  const fechaEntrega = formData.get("fecha_entrega") as string | null;
+  const baseRenovacion = fechaEntrega ? new Date(fechaEntrega + "T00:00:00") : new Date();
+  baseRenovacion.setMonth(baseRenovacion.getMonth() + 10);
+  const fecha_renovacion = baseRenovacion.toISOString().split("T")[0];
 
   const { error } = await supabase.from("plantillas").insert({
     paciente_id: formData.get("paciente_id"),
@@ -29,6 +30,7 @@ export async function crearPlantilla(formData: FormData) {
     fecha_entrega: formData.get("fecha_entrega") || null,
     fecha_renovacion,
     foto_url,
+    es_renovacion: formData.get("es_renovacion") === "true",
   });
   if (error) throw new Error(error.message);
   revalidatePath("/plantillas");
