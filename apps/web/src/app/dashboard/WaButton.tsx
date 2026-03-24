@@ -17,12 +17,13 @@ export default function WaButton({ celular, consultorio, nombre, fechaRenovacion
     const saludo = primerNombre;
     const esKinest = consultorio?.toLowerCase().includes("kinest");
 
-    let infoVencimiento = "próximas a vencer";
+    let infoVencimiento = "proximas a vencer";
+    let dias = 0;
     if (fechaRenovacion) {
       const fecha = new Date(fechaRenovacion + "T00:00:00");
       const hoy = new Date();
       hoy.setHours(0, 0, 0, 0);
-      const dias = Math.round((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+      dias = Math.round((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
       const fechaFormateada = fecha.toLocaleDateString("es-AR");
       if (dias < 0) {
         infoVencimiento = `vencidas el ${fechaFormateada} (hace ${Math.abs(dias)} dias)`;
@@ -33,9 +34,14 @@ export default function WaButton({ celular, consultorio, nombre, fechaRenovacion
       }
     }
 
+    const esVencida = dias < 0;
     const msg = esKinest
-      ? `${saludo}, le informamos que sus plantillas ortopedicas ${infoVencimiento}.\n\nLe recomendamos solicitar un turno para la renovacion y un chequeo anual. Puede gestionar su turno enviando un mensaje por WhatsApp al siguiente telefono KINEST:\n+54 9 11 6567-1472\n\nLas renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`
-      : `${saludo}, le informamos que sus plantillas ortopedicas ${infoVencimiento}.\n\nLe recomendamos solicitar un turno para la renovacion y un chequeo anual. Puede gestionar su turno respondiendo a este WhatsApp.\n\nLas renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`;
+      ? esVencida
+        ? `${saludo}, le informamos que sus plantillas ortopedicas estan vencidas.\n\nLe recomendamos solicitar un turno para la renovacion y un chequeo anual. Puede gestionar su turno enviando un mensaje por WhatsApp al siguiente telefono KINEST:\n+54 9 11 6567-1472\n\nLas renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`
+        : `${saludo}, le informamos que sus plantillas ortopedicas ${infoVencimiento}.\n\nLe recomendamos solicitar un turno para la renovacion y un chequeo anual. Puede gestionar su turno enviando un mensaje por WhatsApp al siguiente telefono KINEST:\n+54 9 11 6567-1472\n\nLas renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`
+      : esVencida
+        ? `${saludo}, le informamos que sus plantillas ortopedicas estan vencidas.\n\nLe recomendamos solicitar un turno para la renovacion y un chequeo anual. Puede gestionar su turno respondiendo a este WhatsApp.\n\nLas renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`
+        : `${saludo}, le informamos que sus plantillas ortopedicas ${infoVencimiento}.\n\nLe recomendamos solicitar un turno para la renovacion y un chequeo anual. Puede gestionar su turno respondiendo a este WhatsApp.\n\nLas renovaciones de FG plantillas tienen un 10%OFF sin importar el medio de pago`;
     const url = `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }
