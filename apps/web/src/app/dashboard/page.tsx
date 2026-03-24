@@ -88,7 +88,7 @@ function DiasTag({ dias }: { dias: number }) {
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    <WaButton celular={paciente?.celular} consultorio={paciente?.consultorios?.nombre} nombre={paciente?.nombre} sexo={paciente?.sexo} />
+                    <WaButton celular={paciente?.celular} consultorio={paciente?.consultorios?.nombre} nombre={paciente?.nombre} sexo={paciente?.sexo} fechaRenovacion={p.fecha_renovacion} />
                     <AccionButton
                       action={actualizarEstadoContacto.bind(null, p.id, "contactado")}
                       label="✓ Contactado"
@@ -126,7 +126,7 @@ function DiasTag({ dias }: { dias: number }) {
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    <WaButton celular={paciente?.celular} consultorio={paciente?.consultorios?.nombre} nombre={paciente?.nombre} sexo={paciente?.sexo} label="Reenviar" />
+                    <WaButton celular={paciente?.celular} consultorio={paciente?.consultorios?.nombre} nombre={paciente?.nombre} sexo={paciente?.sexo} fechaRenovacion={p.fecha_renovacion} label="Reenviar" />
                     <AccionButton
                       action={actualizarEstadoContacto.bind(null, p.id, "agendado")}
                       label="✓ Agendado"
