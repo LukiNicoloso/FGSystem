@@ -29,6 +29,7 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [editando, setEditando] = useState<Paciente | null>(null);
   const [eliminando, setEliminando] = useState<string | null>(null);
+  const [confirmarEliminar, setConfirmarEliminar] = useState<Paciente | null>(null);
   const [busqueda, setBusqueda] = useState("");
 
   const pacientesFiltrados = pacientes.filter((p) => {
@@ -46,8 +47,10 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
     setEditando(null);
   }
 
-  async function handleEliminar(id: string) {
-    if (!confirm("¿Eliminar este paciente?")) return;
+  async function handleEliminarConfirmado() {
+    if (!confirmarEliminar) return;
+    const id = confirmarEliminar.id;
+    setConfirmarEliminar(null);
     setEliminando(id);
     await eliminarPaciente(id);
     setEliminando(null);
@@ -111,7 +114,7 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
                       className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors">
                       Editar
                     </button>
-                    <button onClick={() => handleEliminar(p.id)} disabled={eliminando === p.id}
+                    <button onClick={() => setConfirmarEliminar(p)} disabled={eliminando === p.id}
                       className="px-3 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 disabled:opacity-50 transition-colors">
                       {eliminando === p.id ? "..." : "Eliminar"}
                     </button>
@@ -129,6 +132,31 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
           paciente={editando ?? undefined}
           onClose={handleCloseForm}
         />
+      )}
+
+      {confirmarEliminar && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <h2 className="text-base font-semibold text-gray-900 mb-1">Eliminar paciente</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              ¿Estás seguro que querés eliminar a <span className="font-medium text-gray-800">{confirmarEliminar.nombre}</span>? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmarEliminar(null)}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleEliminarConfirmado}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
