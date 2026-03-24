@@ -4,18 +4,17 @@ interface Props {
   celular: string | null | undefined;
   consultorio: string | null | undefined;
   nombre: string | null | undefined;
-  sexo: string | null | undefined;
   fechaRenovacion: string | null | undefined;
   label?: string;
 }
 
-export default function WaButton({ celular, consultorio, nombre, sexo, fechaRenovacion, label = "WhatsApp" }: Props) {
+export default function WaButton({ celular, consultorio, nombre, fechaRenovacion, label = "WhatsApp" }: Props) {
   const num = celular?.replace(/\D/g, "");
   if (!num) return <span className="px-2.5 py-1 text-xs text-gray-400 bg-gray-100 rounded-lg">Sin celular</span>;
 
   function handleClick() {
     const primerNombre = (nombre ?? "paciente").trim().split(/\s+/)[0];
-    const saludo = `${sexo === "F" ? "Estimada" : "Estimado"} ${primerNombre}`;
+    const saludo = primerNombre;
     const esKinest = consultorio?.toLowerCase().includes("kinest");
 
     let infoVencimiento = "próximas a vencer";
