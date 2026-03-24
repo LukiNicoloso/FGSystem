@@ -19,7 +19,7 @@ export default async function DashboardPage() {
     .from("plantillas")
     .select("*, pacientes(id, nombre, celular, consultorios(nombre))")
     .lte("fecha_renovacion", en15diasStr)
-    .is("estado_contacto", null)
+    .or(`estado_contacto.is.null,and(fecha_renovacion.lt.${hoy},estado_contacto.neq.no_interesado)`)
     .order("fecha_renovacion", { ascending: true });
 
   function diasRestantes(fechaRenovacion: string) {
