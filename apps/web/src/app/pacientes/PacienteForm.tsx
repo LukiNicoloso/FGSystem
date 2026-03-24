@@ -14,11 +14,7 @@ interface Paciente {
   dni: string | null;
   celular: string;
   consultorio_id: string | null;
-  edad: number | null;
-  deporte: boolean;
-  deporte_descripcion: string | null;
   diabetico: boolean;
-  sexo: string | null;
 }
 
 interface Props {
@@ -30,7 +26,6 @@ interface Props {
 export default function PacienteForm({ consultorios, paciente, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [practicaDeporte, setPracticaDeporte] = useState(paciente?.deporte ?? false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -70,28 +65,14 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">DNI</label>
-              <input
-                name="dni"
-                defaultValue={paciente?.dni ?? ""}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: 38123456"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Edad</label>
-              <input
-                name="edad"
-                type="number"
-                min={0}
-                max={120}
-                defaultValue={paciente?.edad ?? ""}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: 35"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">DNI</label>
+            <input
+              name="dni"
+              defaultValue={paciente?.dni ?? ""}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ej: 38123456"
+            />
           </div>
 
           <div>
@@ -125,41 +106,15 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
             </select>
           </div>
 
-          <div className="space-y-3 pt-1">
-            <label className="block text-sm font-medium text-gray-700">Información adicional</label>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="diabetico"
-                id="diabetico"
-                defaultChecked={paciente?.diabetico ?? false}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <label htmlFor="diabetico" className="text-sm text-gray-700">Diabético/a</label>
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="deporte"
-                  id="deporte"
-                  checked={practicaDeporte}
-                  onChange={(e) => setPracticaDeporte(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <label htmlFor="deporte" className="text-sm text-gray-700">Practica deporte</label>
-              </div>
-              {practicaDeporte && (
-                <input
-                  name="deporte_descripcion"
-                  defaultValue={paciente?.deporte_descripcion ?? ""}
-                  className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="¿Qué deporte practica?"
-                />
-              )}
-            </div>
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              type="checkbox"
+              name="diabetico"
+              id="diabetico"
+              defaultChecked={paciente?.diabetico ?? false}
+              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor="diabetico" className="text-sm text-gray-700">Diabético/a</label>
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}

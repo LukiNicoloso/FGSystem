@@ -16,11 +16,7 @@ interface Paciente {
   dni: string | null;
   celular: string;
   consultorio_id: string | null;
-  edad: number | null;
-  deporte: boolean;
-  deporte_descripcion: string | null;
   diabetico: boolean;
-  sexo: string | null;
   consultorios: Consultorio | null;
 }
 
@@ -92,10 +88,8 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Nombre</th>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">DNI</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Edad</th>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Celular</th>
                 <th className="text-left px-5 py-3 font-medium text-gray-600">Consultorio</th>
-                <th className="text-left px-5 py-3 font-medium text-gray-600">Info</th>
                 <th className="px-5 py-3" />
               </tr>
             </thead>
@@ -108,22 +102,9 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
                     </Link>
                   </td>
                   <td className="px-5 py-3 text-gray-600">{p.dni ?? <span className="text-gray-400">—</span>}</td>
-                  <td className="px-5 py-3 text-gray-600">{p.edad ?? <span className="text-gray-400">—</span>}</td>
                   <td className="px-5 py-3 text-gray-600">{p.celular}</td>
                   <td className="px-5 py-3 text-gray-600">
                     {p.consultorios?.nombre ?? <span className="text-gray-400">—</span>}
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex gap-1 flex-wrap">
-                      {p.diabetico && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Diabético</span>
-                      )}
-                      {p.deporte && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700" title={p.deporte_descripcion ?? ""}>
-                          {p.deporte_descripcion || "Deporte"}
-                        </span>
-                      )}
-                    </div>
                   </td>
                   <td className="px-5 py-3 flex gap-2 justify-end">
                     <button onClick={() => handleEditar(p)}
