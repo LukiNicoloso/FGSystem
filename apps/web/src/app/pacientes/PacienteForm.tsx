@@ -86,10 +86,6 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ej: 5491123456789"
             />
-            <p className="text-xs text-gray-400 mt-1">
-              Formato internacional sin + ni espacios: <span className="font-medium text-gray-500">54 + código de área + número</span>
-              <br />Ej: CABA → <span className="font-medium text-gray-500">5491112345678</span>
-            </p>
           </div>
 
           <div>
