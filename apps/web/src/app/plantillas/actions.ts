@@ -2,21 +2,17 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { subirFotoCloudinary } from "@/lib/cloudinary";
 
-async function subirFoto(supabase: Awaited<ReturnType<typeof createClient>>, foto: File): Promise<string | null> {
+async function subirFoto(foto: File): Promise<string | null> {
   if (!foto || foto.size === 0) return null;
-  const ext = foto.name.split(".").pop();
-  const path = `${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("Plantillas").upload(path, foto);
-  if (error) throw new Error(error.message);
-  const { data } = supabase.storage.from("Plantillas").getPublicUrl(path);
-  return data.publicUrl;
+  return subirFotoCloudinary(foto);
 }
 
 export async function crearPlantilla(formData: FormData) {
   const supabase = await createClient();
   const foto = formData.get("foto") as File | null;
-  const foto_url = foto && foto.size > 0 ? await subirFoto(supabase, foto) : null;
+  const foto_url = foto && foto.size > 0 ? await subirFoto(foto) : null;
 
   const fechaEntrega = formData.get("fecha_entrega") as string | null;
   const baseRenovacion = fechaEntrega ? new Date(fechaEntrega + "T00:00:00") : new Date();
@@ -41,7 +37,7 @@ export async function crearPlantilla(formData: FormData) {
 export async function editarPlantilla(id: string, formData: FormData) {
   const supabase = await createClient();
   const foto = formData.get("foto") as File | null;
-  const foto_url = foto && foto.size > 0 ? await subirFoto(supabase, foto) : undefined;
+  const foto_url = foto && foto.size > 0 ? await subirFoto(foto) : undefined;
 
   const update: Record<string, unknown> = {
     paciente_id: formData.get("paciente_id"),

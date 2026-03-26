@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { subirFotoCloudinary } from "@/lib/cloudinary";
 
 export async function crearPaciente(formData: FormData) {
   const supabase = await createClient();
@@ -26,11 +27,7 @@ export async function crearPaciente(formData: FormData) {
 
   let foto_url: string | null = null;
   if (foto && foto.size > 0) {
-    const ext = foto.name.split(".").pop();
-    const path = `${crypto.randomUUID()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("Plantillas").upload(path, foto);
-    if (uploadError) throw new Error(uploadError.message);
-    foto_url = supabase.storage.from("Plantillas").getPublicUrl(path).data.publicUrl;
+    foto_url = await subirFotoCloudinary(foto);
   }
 
   const baseRenovacion = fechaEntrega ? new Date(fechaEntrega + "T00:00:00") : new Date();
