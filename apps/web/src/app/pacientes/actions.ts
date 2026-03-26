@@ -6,7 +6,8 @@ import { revalidatePath } from "next/cache";
 export async function crearPaciente(formData: FormData) {
   const supabase = await createClient();
   const deporte = formData.get("deporte") === "on";
-  const { error } = await supabase.from("pacientes").insert({
+
+  const { data: paciente, error } = await supabase.from("pacientes").insert({
     nombre: formData.get("nombre"),
     dni: formData.get("dni") || null,
     celular: formData.get("celular"),
@@ -16,9 +17,38 @@ export async function crearPaciente(formData: FormData) {
     deporte_descripcion: deporte ? (formData.get("deporte_descripcion") || null) : null,
     diabetico: formData.get("diabetico") === "on",
     sexo: formData.get("sexo") || null,
-  });
+  }).select("id").single();
   if (error) throw new Error(error.message);
+
+  // Crear plantilla inicial
+  const fechaEntrega = formData.get("fecha_entrega") as string | null;
+  const foto = formData.get("foto_pisada") as File | null;
+
+  let foto_url: string | null = null;
+  if (foto && foto.size > 0) {
+    const ext = foto.name.split(".").pop();
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await supabase.storage.from("Plantillas").upload(path, foto);
+    if (uploadError) throw new Error(uploadError.message);
+    foto_url = supabase.storage.from("Plantillas").getPublicUrl(path).data.publicUrl;
+  }
+
+  const baseRenovacion = fechaEntrega ? new Date(fechaEntrega + "T00:00:00") : new Date();
+  baseRenovacion.setMonth(baseRenovacion.getMonth() + 10);
+  const fecha_renovacion = baseRenovacion.toISOString().split("T")[0];
+
+  const { error: plantillaError } = await supabase.from("plantillas").insert({
+    paciente_id: paciente.id,
+    estado: fechaEntrega ? "entregada" : "en_taller",
+    fecha_entrega: fechaEntrega || null,
+    fecha_renovacion,
+    foto_url,
+    es_renovacion: false,
+  });
+  if (plantillaError) throw new Error(plantillaError.message);
+
   revalidatePath("/pacientes");
+  revalidatePath("/dashboard");
 }
 
 export async function editarPaciente(id: string, formData: FormData) {

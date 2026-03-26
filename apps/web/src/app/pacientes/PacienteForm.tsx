@@ -117,6 +117,32 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
             <label htmlFor="diabetico" className="text-sm text-gray-700">Diabético/a</label>
           </div>
 
+          {!paciente && (
+            <>
+              <hr className="border-gray-200" />
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Plantilla inicial</p>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha entrega plantillas</label>
+                <input
+                  type="date"
+                  name="fecha_entrega"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Foto de la pisada</label>
+                <input
+                  type="file"
+                  name="foto_pisada"
+                  accept="image/*"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700"
+                />
+              </div>
+            </>
+          )}
+
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
