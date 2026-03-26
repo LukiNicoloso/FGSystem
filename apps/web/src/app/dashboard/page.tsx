@@ -16,7 +16,7 @@ export default async function DashboardPage() {
     .from("plantillas")
     .select("*, pacientes(id, nombre, celular, consultorios(nombre))")
     .lte("fecha_renovacion", en15diasStr)
-    .or(`estado_contacto.is.null,and(fecha_renovacion.lt.${hoy},estado_contacto.neq.no_interesado)`)
+    .or("estado_contacto.is.null,estado_contacto.eq.pendiente")
     .order("fecha_renovacion", { ascending: true });
 
   return (
