@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function parseUrls(url: string): string[] {
   try {
@@ -14,6 +14,17 @@ export default function FotoViewer({ url }: { url: string }) {
   const urls = parseUrls(url);
   const [open, setOpen] = useState(false);
   const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    if (!open || urls.length <= 1) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "ArrowRight") setIdx(i => (i + 1) % urls.length);
+      if (e.key === "ArrowLeft") setIdx(i => (i - 1 + urls.length) % urls.length);
+      if (e.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [open, urls.length]);
 
   return (
     <>
