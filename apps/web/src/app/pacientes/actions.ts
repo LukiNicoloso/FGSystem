@@ -25,9 +25,12 @@ export async function crearPaciente(formData: FormData) {
   const fechaEntrega = formData.get("fecha_entrega") as string | null;
   const foto = formData.get("foto_pisada") as File | null;
 
+  const fotos = formData.getAll("foto_pisada") as File[];
+  const fotosValidas = fotos.filter(f => f && f.size > 0);
   let foto_url: string | null = null;
-  if (foto && foto.size > 0) {
-    foto_url = await subirFotoCloudinary(foto);
+  if (fotosValidas.length > 0) {
+    const urls = await Promise.all(fotosValidas.map(f => subirFotoCloudinary(f)));
+    foto_url = JSON.stringify(urls);
   }
 
   const baseRenovacion = fechaEntrega ? new Date(fechaEntrega + "T00:00:00") : new Date();
