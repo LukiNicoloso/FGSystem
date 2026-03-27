@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import PlantillasClient from "./PlantillasClient";
 
+export const revalidate = 30;
+
 export default async function PlantillasPage() {
   const supabase = await createClient();
 

@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import PacientesClient from "./PacientesClient";
 
+export const revalidate = 30;
+
 export default async function PacientesPage() {
   const supabase = await createClient();
 
