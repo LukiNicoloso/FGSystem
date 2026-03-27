@@ -109,20 +109,26 @@ export default function FotoViewer({ url }: { url: string }) {
               ×
             </button>
 
-            {/* Zoom controls */}
-            <div className="absolute top-2 left-2 flex gap-1 z-10">
-              <button
-                onClick={() => setZoom(z => Math.min(z + 0.5, 4))}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-lg font-bold"
-              >
-                +
-              </button>
-              <button
-                onClick={() => { setZoom(z => { const next = Math.max(z - 0.5, 1); if (next === 1) setOffset({ x: 0, y: 0 }); return next; }); }}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-lg font-bold"
-              >
-                −
-              </button>
+            {/* Flechas carrusel — dentro de la imagen */}
+            {urls.length > 1 && (
+              <>
+                <button
+                  onClick={() => changeIdx((idx - 1 + urls.length) % urls.length)}
+                  className="absolute left-6 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-lg z-10"
+                >
+                  ‹
+                </button>
+                <button
+                  onClick={() => changeIdx((idx + 1) % urls.length)}
+                  className="absolute right-6 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-lg z-10"
+                >
+                  ›
+                </button>
+              </>
+            )}
+
+            {/* Zoom controls — abajo centrado */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
               {zoom > 1 && (
                 <button
                   onClick={resetZoom}
@@ -131,28 +137,22 @@ export default function FotoViewer({ url }: { url: string }) {
                   reset
                 </button>
               )}
+              <button
+                onClick={() => { setZoom(z => { const next = Math.max(z - 0.5, 1); if (next === 1) setOffset({ x: 0, y: 0 }); return next; }); }}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-lg font-bold"
+              >
+                −
+              </button>
+              {urls.length > 1 && (
+                <span className="text-white/60 text-xs px-1">{idx + 1} / {urls.length}</span>
+              )}
+              <button
+                onClick={() => setZoom(z => Math.min(z + 0.5, 4))}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-lg font-bold"
+              >
+                +
+              </button>
             </div>
-
-            {/* Flechas carrusel */}
-            {urls.length > 1 && (
-              <>
-                <button
-                  onClick={() => changeIdx((idx - 1 + urls.length) % urls.length)}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-lg z-10"
-                >
-                  ‹
-                </button>
-                <button
-                  onClick={() => changeIdx((idx + 1) % urls.length)}
-                  className="absolute right-10 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-lg z-10"
-                >
-                  ›
-                </button>
-                <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/60 text-xs">
-                  {idx + 1} / {urls.length}
-                </p>
-              </>
-            )}
 
             {/* Imagen */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
