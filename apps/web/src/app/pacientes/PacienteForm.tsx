@@ -20,7 +20,7 @@ interface Paciente {
 interface Props {
   consultorios: Consultorio[];
   paciente?: Paciente;
-  onClose: () => void;
+  onClose: (guardado?: boolean) => void;
 }
 
 export default function PacienteForm({ consultorios, paciente, onClose }: Props) {
@@ -38,7 +38,7 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
       } else {
         await crearPaciente(formData);
       }
-      onClose();
+      onClose(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado");
     } finally {

@@ -31,6 +31,12 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
   const [eliminando, setEliminando] = useState<string | null>(null);
   const [confirmarEliminar, setConfirmarEliminar] = useState<Paciente | null>(null);
   const [busqueda, setBusqueda] = useState("");
+  const [toast, setToast] = useState<string | null>(null);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
+  }
 
   const pacientesFiltrados = pacientes.filter((p) => {
     const q = busqueda.toLowerCase();
@@ -42,8 +48,9 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
     setShowForm(true);
   }
 
-  function handleCloseForm() {
+  function handleCloseForm(guardado?: boolean) {
     setShowForm(false);
+    if (guardado) showToast(editando ? "Paciente actualizado correctamente ✓" : "Paciente dado de alta correctamente ✓");
     setEditando(null);
   }
 
@@ -123,6 +130,12 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg">
+          {toast}
         </div>
       )}
 
