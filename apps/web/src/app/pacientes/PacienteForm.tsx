@@ -143,7 +143,7 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
 
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose}
+            <button type="button" onClick={() => onClose()}
               className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
               Cancelar
             </button>
