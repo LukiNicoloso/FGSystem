@@ -104,7 +104,7 @@ export default function FotoViewer({ url }: { url: string }) {
             {/* Cerrar */}
             <button
               onClick={() => { setOpen(false); resetZoom(); }}
-              className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 text-xl leading-none z-10"
+              className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-xl leading-none z-10"
             >
               ×
             </button>
@@ -113,20 +113,20 @@ export default function FotoViewer({ url }: { url: string }) {
             <div className="absolute top-2 left-2 flex gap-1 z-10">
               <button
                 onClick={() => setZoom(z => Math.min(z + 0.5, 4))}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 text-lg font-bold"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-lg font-bold"
               >
                 +
               </button>
               <button
                 onClick={() => { setZoom(z => { const next = Math.max(z - 0.5, 1); if (next === 1) setOffset({ x: 0, y: 0 }); return next; }); }}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 text-lg font-bold"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-lg font-bold"
               >
                 −
               </button>
               {zoom > 1 && (
                 <button
                   onClick={resetZoom}
-                  className="px-2 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 text-xs"
+                  className="px-2 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-xs"
                 >
                   reset
                 </button>
@@ -138,13 +138,13 @@ export default function FotoViewer({ url }: { url: string }) {
               <>
                 <button
                   onClick={() => changeIdx((idx - 1 + urls.length) % urls.length)}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 text-lg z-10"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-lg z-10"
                 >
                   ‹
                 </button>
                 <button
                   onClick={() => changeIdx((idx + 1) % urls.length)}
-                  className="absolute right-10 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 text-lg z-10"
+                  className="absolute right-10 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90 text-lg z-10"
                 >
                   ›
                 </button>
