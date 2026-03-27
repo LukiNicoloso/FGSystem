@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 function parseUrls(url: string): string[] {
   try {
@@ -14,17 +14,62 @@ export default function FotoViewer({ url }: { url: string }) {
   const urls = parseUrls(url);
   const [open, setOpen] = useState(false);
   const [idx, setIdx] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const offsetStart = useRef({ x: 0, y: 0 });
+
+  function resetZoom() {
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+  }
+
+  function changeIdx(next: number) {
+    setIdx(next);
+    resetZoom();
+  }
 
   useEffect(() => {
-    if (!open || urls.length <= 1) return;
+    if (!open) return;
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "ArrowRight") setIdx(i => (i + 1) % urls.length);
-      if (e.key === "ArrowLeft") setIdx(i => (i - 1 + urls.length) % urls.length);
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "ArrowRight") changeIdx((idx + 1) % urls.length);
+      if (e.key === "ArrowLeft") changeIdx((idx - 1 + urls.length) % urls.length);
+      if (e.key === "Escape") { setOpen(false); resetZoom(); }
+      if (e.key === "+" || e.key === "=") setZoom(z => Math.min(z + 0.5, 4));
+      if (e.key === "-") setZoom(z => { const next = Math.max(z - 0.5, 1); if (next === 1) setOffset({ x: 0, y: 0 }); return next; });
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [open, urls.length]);
+  }, [open, idx, urls.length]);
+
+  function handleWheel(e: React.WheelEvent) {
+    e.preventDefault();
+    setZoom(z => {
+      const next = e.deltaY < 0 ? Math.min(z + 0.25, 4) : Math.max(z - 0.25, 1);
+      if (next === 1) setOffset({ x: 0, y: 0 });
+      return next;
+    });
+  }
+
+  function handleMouseDown(e: React.MouseEvent) {
+    if (zoom <= 1) return;
+    dragging.current = true;
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    offsetStart.current = { ...offset };
+  }
+
+  function handleMouseMove(e: React.MouseEvent) {
+    if (!dragging.current) return;
+    setOffset({
+      x: offsetStart.current.x + (e.clientX - dragStart.current.x),
+      y: offsetStart.current.y + (e.clientY - dragStart.current.y),
+    });
+  }
+
+  function handleMouseUp() {
+    dragging.current = false;
+  }
 
   return (
     <>
@@ -43,27 +88,62 @@ export default function FotoViewer({ url }: { url: string }) {
 
       {open && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
-          onClick={() => setOpen(false)}
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+          onClick={() => { setOpen(false); resetZoom(); }}
         >
-          <div className="relative max-w-3xl max-h-[90vh] p-4" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative max-w-3xl max-h-[90vh] p-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            style={{ cursor: zoom > 1 ? "grab" : "default" }}
+          >
+            {/* Cerrar */}
             <button
-              onClick={() => setOpen(false)}
+              onClick={() => { setOpen(false); resetZoom(); }}
               className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 text-xl leading-none z-10"
             >
               ×
             </button>
 
+            {/* Zoom controls */}
+            <div className="absolute top-2 left-2 flex gap-1 z-10">
+              <button
+                onClick={() => setZoom(z => Math.min(z + 0.5, 4))}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 text-lg font-bold"
+              >
+                +
+              </button>
+              <button
+                onClick={() => { setZoom(z => { const next = Math.max(z - 0.5, 1); if (next === 1) setOffset({ x: 0, y: 0 }); return next; }); }}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 text-lg font-bold"
+              >
+                −
+              </button>
+              {zoom > 1 && (
+                <button
+                  onClick={resetZoom}
+                  className="px-2 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 text-xs"
+                >
+                  reset
+                </button>
+              )}
+            </div>
+
+            {/* Flechas carrusel */}
             {urls.length > 1 && (
               <>
                 <button
-                  onClick={() => setIdx(i => (i - 1 + urls.length) % urls.length)}
+                  onClick={() => changeIdx((idx - 1 + urls.length) % urls.length)}
                   className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 text-lg z-10"
                 >
                   ‹
                 </button>
                 <button
-                  onClick={() => setIdx(i => (i + 1) % urls.length)}
+                  onClick={() => changeIdx((idx + 1) % urls.length)}
                   className="absolute right-10 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 text-lg z-10"
                 >
                   ›
@@ -74,11 +154,17 @@ export default function FotoViewer({ url }: { url: string }) {
               </>
             )}
 
+            {/* Imagen */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={urls[idx]}
               alt={`Pisada ${idx + 1}`}
-              className="max-h-[85vh] max-w-full rounded-xl object-contain"
+              draggable={false}
+              style={{
+                transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                transition: dragging.current ? "none" : "transform 0.15s ease",
+              }}
+              className="max-h-[85vh] max-w-full rounded-xl object-contain select-none"
             />
           </div>
         </div>
