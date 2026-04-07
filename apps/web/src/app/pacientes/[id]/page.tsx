@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import HistorialActions from "./HistorialActions";
 import FotoViewer from "./FotoViewer";
+import PlantillaCardActions from "./PlantillaCardActions";
 
 function diasParaRenovacion(fechaRenovacion: string | null, fechaEntrega: string | null, fechaCreacion: string): { dias: number; fecha: string } {
   let renovacion: Date;
@@ -21,6 +22,7 @@ function diasParaRenovacion(fechaRenovacion: string | null, fechaEntrega: string
 
 type Plantilla = {
   id: string;
+  paciente_id: string;
   created_at: string;
   estado: string;
   es_renovacion: boolean;
@@ -53,7 +55,6 @@ export default async function HistorialPacientePage({ params }: { params: Promis
   const consultorio = (paciente.consultorios as { nombre: string } | null)?.nombre;
   const lista = (plantillas ?? []) as Plantilla[];
 
-  // Construir timeline de actividades
   const activities: ActivityItem[] = [];
   for (const p of lista) {
     activities.push({
@@ -73,7 +74,6 @@ export default async function HistorialPacientePage({ params }: { params: Promis
     }
   }
 
-  // Orden descendente. Mismo día: alta_renovacion > contacto > alta
   const typeWeight: Record<string, number> = { alta_renovacion: 3, contacto: 2, alta: 1 };
   activities.sort((a, b) => {
     const sameDay =
@@ -86,7 +86,6 @@ export default async function HistorialPacientePage({ params }: { params: Promis
 
   return (
     <div>
-      {/* Encabezado */}
       <div className="mb-6">
         <Link href="/pacientes" className="text-sm text-blue-600 hover:underline">
           ← Volver a pacientes
@@ -95,7 +94,6 @@ export default async function HistorialPacientePage({ params }: { params: Promis
         <p className="text-sm text-gray-500 mt-0.5">Historial de actividades</p>
       </div>
 
-      {/* Info del paciente */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6 grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm">
         <div>
           <p className="text-gray-400 text-xs mb-0.5">DNI</p>
@@ -129,7 +127,6 @@ export default async function HistorialPacientePage({ params }: { params: Promis
         </div>
       </div>
 
-      {/* Resumen */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
           <p className="text-3xl font-bold text-blue-700">{lista.length}</p>
@@ -149,7 +146,6 @@ export default async function HistorialPacientePage({ params }: { params: Promis
         </div>
       </div>
 
-      {/* Timeline */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Actividades</h2>
         <HistorialActions pacienteId={id} pacientes={todosPacientes ?? []} />
@@ -162,9 +158,7 @@ export default async function HistorialPacientePage({ params }: { params: Promis
         </div>
       ) : (
         <div className="relative">
-          {/* Línea vertical */}
           <div className="absolute left-5 top-0 bottom-0 w-px bg-gray-200" />
-
           <div className="space-y-4">
             {activities.map((item) => {
               if (item.tipo === "alta" || item.tipo === "alta_renovacion") {
@@ -174,12 +168,9 @@ export default async function HistorialPacientePage({ params }: { params: Promis
 
                 return (
                   <div key={item.key} className="relative flex gap-4">
-                    {/* Dot */}
                     <div className={`relative z-10 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg border-2 bg-white ${esRenov ? "border-purple-300" : "border-blue-300"}`}>
                       {esRenov ? "♻️" : "📋"}
                     </div>
-
-                    {/* Card */}
                     <div className={`flex-1 bg-white rounded-xl border p-4 mb-1 ${esRenov ? "border-purple-200" : "border-gray-200"}`}>
                       <div className="flex items-start justify-between gap-2 mb-3">
                         <div>
@@ -190,6 +181,10 @@ export default async function HistorialPacientePage({ params }: { params: Promis
                             {item.fecha.toLocaleDateString("es-AR")}
                           </p>
                         </div>
+                        <PlantillaCardActions
+                          plantilla={p}
+                          pacientes={todosPacientes ?? []}
+                        />
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
@@ -238,7 +233,6 @@ export default async function HistorialPacientePage({ params }: { params: Promis
                 );
               }
 
-              // Tipo: contacto
               const p = item.plantilla;
               const resultado = p.estado_contacto;
               const resultadoConfig =
@@ -248,12 +242,9 @@ export default async function HistorialPacientePage({ params }: { params: Promis
 
               return (
                 <div key={item.key} className="relative flex gap-4">
-                  {/* Dot */}
                   <div className="relative z-10 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg border-2 bg-white border-yellow-300">
                     📞
                   </div>
-
-                  {/* Card */}
                   <div className="flex-1 bg-white rounded-xl border border-yellow-200 p-4 mb-1">
                     <div className="flex items-center justify-between gap-2">
                       <div>
