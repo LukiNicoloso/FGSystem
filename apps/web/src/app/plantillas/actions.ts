@@ -4,17 +4,17 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { subirFotoCloudinary } from "@/lib/cloudinary";
 
-async function subirFotos(fotos: File[]): Promise<string | null> {
-  const validas = fotos.filter(f => f && f.size > 0);
-  if (validas.length === 0) return null;
-  const urls = await Promise.all(validas.map(f => subirFotoCloudinary(f)));
+function toFotoUrl(urls: string[]): string | null {
+  if (urls.length === 0) return null;
   return urls.length === 1 ? urls[0] : JSON.stringify(urls);
 }
 
 export async function crearPlantilla(formData: FormData) {
   const supabase = await createClient();
   const fotos = formData.getAll("foto") as File[];
-  const foto_url = await subirFotos(fotos);
+  const validas = fotos.filter(f => f && f.size > 0);
+  const urls = validas.length > 0 ? await Promise.all(validas.map(f => subirFotoCloudinary(f))) : [];
+  const foto_url = toFotoUrl(urls);
 
   const fechaEntrega = formData.get("fecha_entrega") as string | null;
   const baseRenovacion = fechaEntrega ? new Date(fechaEntrega + "T00:00:00") : new Date();
@@ -38,18 +38,25 @@ export async function crearPlantilla(formData: FormData) {
 
 export async function editarPlantilla(id: string, formData: FormData) {
   const supabase = await createClient();
-  const fotos = formData.getAll("foto") as File[];
-  const foto_url = await subirFotos(fotos);
 
-  const update: Record<string, unknown> = {
+  // Fotos existentes que el usuario decidió conservar
+  const remainingStr = formData.get("remaining_fotos") as string | null;
+  const remaining: string[] = remainingStr ? JSON.parse(remainingStr) : [];
+
+  // Nuevas fotos subidas
+  const fotos = formData.getAll("foto") as File[];
+  const nuevas = fotos.filter(f => f && f.size > 0);
+  const nuevasUrls = nuevas.length > 0 ? await Promise.all(nuevas.map(f => subirFotoCloudinary(f))) : [];
+
+  const allUrls = [...remaining, ...nuevasUrls];
+
+  const { error } = await supabase.from("plantillas").update({
     paciente_id: formData.get("paciente_id"),
     estado: "entregada",
     notas: formData.get("notas") || null,
     fecha_entrega: formData.get("fecha_entrega") || null,
-  };
-  if (foto_url !== null) update.foto_url = foto_url;
-
-  const { error } = await supabase.from("plantillas").update(update).eq("id", id);
+    foto_url: toFotoUrl(allUrls),
+  }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/plantillas");
   revalidatePath("/pacientes");
