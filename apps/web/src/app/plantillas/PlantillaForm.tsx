@@ -34,11 +34,16 @@ function parseFotoUrls(foto_url: string | null): string[] {
 export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault, esRenovacionDefault, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [previews, setPreviews] = useState<string[]>(parseFotoUrls(plantilla?.foto_url ?? null));
+  const [existingPhotos, setExistingPhotos] = useState<string[]>(parseFotoUrls(plantilla?.foto_url ?? null));
+  const [newPreviews, setNewPreviews] = useState<string[]>([]);
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    setPreviews(files.map(f => URL.createObjectURL(f)));
+    setNewPreviews(files.map(f => URL.createObjectURL(f)));
+  }
+
+  function removeExisting(index: number) {
+    setExistingPhotos(prev => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -89,20 +94,51 @@ export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault,
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               placeholder="Observaciones opcionales..." />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Fotos de la pisada</label>
+
+            {/* Fotos existentes con botón de eliminar */}
+            {existingPhotos.length > 0 && (
+              <div className="mb-2">
+                <p className="text-xs text-gray-400 mb-1.5">Fotos actuales</p>
+                <div className="flex gap-2 flex-wrap">
+                  {existingPhotos.map((src, i) => (
+                    <div key={i} className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt={`Foto ${i + 1}`} className="h-20 rounded-lg object-cover border border-gray-200" />
+                      <button
+                        type="button"
+                        onClick={() => removeExisting(i)}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center hover:bg-red-600 leading-none"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Hidden field con las fotos existentes que quedan */}
+            <input type="hidden" name="remaining_fotos" value={JSON.stringify(existingPhotos)} />
+
+            {/* Agregar nuevas fotos */}
             <input type="file" name="foto" accept="image/*" multiple onChange={handleFotoChange}
               className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
             <p className="text-xs text-gray-400 mt-1">Podés seleccionar varias fotos a la vez</p>
-            {previews.length > 0 && (
+
+            {/* Preview de nuevas fotos */}
+            {newPreviews.length > 0 && (
               <div className="mt-2 flex gap-2 flex-wrap">
-                {previews.map((src, i) => (
+                {newPreviews.map((src, i) => (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img key={i} src={src} alt={`Preview ${i + 1}`} className="h-20 rounded-lg object-cover border border-gray-200" />
+                  <img key={i} src={src} alt={`Nueva ${i + 1}`} className="h-20 rounded-lg object-cover border border-blue-200" />
                 ))}
               </div>
             )}
           </div>
+
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
