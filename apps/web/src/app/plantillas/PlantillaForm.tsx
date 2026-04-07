@@ -22,14 +22,23 @@ interface Props {
   onClose: () => void;
 }
 
+function parseFotoUrls(foto_url: string | null): string[] {
+  if (!foto_url) return [];
+  try {
+    const parsed = JSON.parse(foto_url);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {}
+  return [foto_url];
+}
+
 export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault, esRenovacionDefault, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [preview, setPreview] = useState<string | null>(plantilla?.foto_url ?? null);
+  const [previews, setPreviews] = useState<string[]>(parseFotoUrls(plantilla?.foto_url ?? null));
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) setPreview(URL.createObjectURL(file));
+    const files = Array.from(e.target.files ?? []);
+    setPreviews(files.map(f => URL.createObjectURL(f)));
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -81,13 +90,16 @@ export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault,
               placeholder="Observaciones opcionales..." />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Foto de la pisada</label>
-            <input type="file" name="foto" accept="image/*" onChange={handleFotoChange}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fotos de la pisada</label>
+            <input type="file" name="foto" accept="image/*" multiple onChange={handleFotoChange}
               className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-            {preview && (
-              <div className="mt-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={preview} alt="Preview pisada" className="rounded-lg max-h-40 object-contain border border-gray-200" />
+            <p className="text-xs text-gray-400 mt-1">Podés seleccionar varias fotos a la vez</p>
+            {previews.length > 0 && (
+              <div className="mt-2 flex gap-2 flex-wrap">
+                {previews.map((src, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={i} src={src} alt={`Preview ${i + 1}`} className="h-20 rounded-lg object-cover border border-gray-200" />
+                ))}
               </div>
             )}
           </div>
