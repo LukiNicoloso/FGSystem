@@ -4,15 +4,17 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { subirFotoCloudinary } from "@/lib/cloudinary";
 
-async function subirFoto(foto: File): Promise<string | null> {
-  if (!foto || foto.size === 0) return null;
-  return subirFotoCloudinary(foto);
+async function subirFotos(fotos: File[]): Promise<string | null> {
+  const validas = fotos.filter(f => f && f.size > 0);
+  if (validas.length === 0) return null;
+  const urls = await Promise.all(validas.map(f => subirFotoCloudinary(f)));
+  return urls.length === 1 ? urls[0] : JSON.stringify(urls);
 }
 
 export async function crearPlantilla(formData: FormData) {
   const supabase = await createClient();
-  const foto = formData.get("foto") as File | null;
-  const foto_url = foto && foto.size > 0 ? await subirFoto(foto) : null;
+  const fotos = formData.getAll("foto") as File[];
+  const foto_url = await subirFotos(fotos);
 
   const fechaEntrega = formData.get("fecha_entrega") as string | null;
   const baseRenovacion = fechaEntrega ? new Date(fechaEntrega + "T00:00:00") : new Date();
@@ -36,8 +38,8 @@ export async function crearPlantilla(formData: FormData) {
 
 export async function editarPlantilla(id: string, formData: FormData) {
   const supabase = await createClient();
-  const foto = formData.get("foto") as File | null;
-  const foto_url = foto && foto.size > 0 ? await subirFoto(foto) : undefined;
+  const fotos = formData.getAll("foto") as File[];
+  const foto_url = await subirFotos(fotos);
 
   const update: Record<string, unknown> = {
     paciente_id: formData.get("paciente_id"),
@@ -45,7 +47,7 @@ export async function editarPlantilla(id: string, formData: FormData) {
     notas: formData.get("notas") || null,
     fecha_entrega: formData.get("fecha_entrega") || null,
   };
-  if (foto_url !== undefined) update.foto_url = foto_url;
+  if (foto_url !== null) update.foto_url = foto_url;
 
   const { error } = await supabase.from("plantillas").update(update).eq("id", id);
   if (error) throw new Error(error.message);
