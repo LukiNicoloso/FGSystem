@@ -26,6 +26,12 @@ interface Props {
 export default function PacienteForm({ consultorios, paciente, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [previews, setPreviews] = useState<string[]>([]);
+
+  function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    setPreviews(files.map(f => URL.createObjectURL(f)));
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -134,9 +140,18 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
                   name="foto_pisada"
                   accept="image/*"
                   multiple
+                  onChange={handleFotoChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700"
                 />
                 <p className="text-xs text-gray-400 mt-1">Podés seleccionar varias fotos a la vez</p>
+                {previews.length > 0 && (
+                  <div className="mt-2 flex gap-2 flex-wrap">
+                    {previews.map((src, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={i} src={src} alt={`Preview ${i + 1}`} className="h-20 rounded-lg object-cover border border-gray-200" />
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )}
