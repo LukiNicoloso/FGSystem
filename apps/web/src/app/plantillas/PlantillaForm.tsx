@@ -71,8 +71,9 @@ export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault,
         <h2 className="text-lg font-semibold text-gray-900 mb-5">
           {plantilla ? "Editar plantilla" : esRenovacionDefault ? "Registrar renovación" : "Nueva plantilla"}
         </h2>
-        <input type="hidden" name="es_renovacion" value={String(esRenovacionDefault ?? false)} />
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Tiene que vivir dentro del form: FormData solo levanta los campos que estan adentro */}
+          <input type="hidden" name="es_renovacion" value={String(esRenovacionDefault ?? false)} />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Paciente</label>
             <select name="paciente_id" defaultValue={plantilla?.paciente_id ?? pacienteIdDefault ?? ""} required
