@@ -21,16 +21,37 @@ export async function crearPlantilla(formData: FormData) {
   baseRenovacion.setMonth(baseRenovacion.getMonth() + 10);
   const fecha_renovacion = baseRenovacion.toISOString().split("T")[0];
 
-  const { error } = await supabase.from("plantillas").insert({
-    paciente_id: formData.get("paciente_id"),
+  const paciente_id = formData.get("paciente_id") as string;
+  const es_renovacion = formData.get("es_renovacion") === "true";
+
+  const { data: nueva, error } = await supabase.from("plantillas").insert({
+    paciente_id,
     estado: "entregada",
     notas: formData.get("notas") || null,
     fecha_entrega: formData.get("fecha_entrega") || null,
     fecha_renovacion,
     foto_url,
-    es_renovacion: formData.get("es_renovacion") === "true",
-  });
+    es_renovacion,
+  }).select("id").single();
   if (error) throw new Error(error.message);
+
+  // La renovacion reemplaza a las plantillas anteriores: su fecha_renovacion quedo
+  // obsoleta, asi que salen de seguimiento y la vigente pasa a ser la que acabamos
+  // de crear. Solo cerramos las que seguian abiertas, sin pisar contactos ya hechos.
+  if (es_renovacion && nueva) {
+    const { error: cierreError } = await supabase
+      .from("plantillas")
+      .update({ estado_contacto: "renovado" })
+      .eq("paciente_id", paciente_id)
+      .neq("id", nueva.id)
+      .or("estado_contacto.is.null,estado_contacto.eq.pendiente");
+    // Si esto falla no cortamos el alta: la plantilla nueva ya quedo guardada y el
+    // seguimiento igual filtra por la ultima plantilla de cada paciente.
+    if (cierreError) {
+      console.error("No se pudieron cerrar las plantillas anteriores:", cierreError.message);
+    }
+  }
+
   revalidatePath("/plantillas");
   revalidatePath("/pacientes");
   revalidatePath("/dashboard");
