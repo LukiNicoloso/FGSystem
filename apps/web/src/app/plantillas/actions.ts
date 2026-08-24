@@ -39,16 +39,23 @@ export async function crearPlantilla(formData: FormData) {
   // obsoleta, asi que salen de seguimiento y la vigente pasa a ser la que acabamos
   // de crear. Solo cerramos las que seguian abiertas, sin pisar contactos ya hechos.
   if (es_renovacion && nueva) {
-    const { error: cierreError } = await supabase
+    // El .select() nos devuelve las filas que realmente se actualizaron: sin el,
+    // una politica de RLS que filtre el update lo deja en cero sin devolver error
+    // y el cierre falla en silencio.
+    const { data: cerradas, error: cierreError } = await supabase
       .from("plantillas")
       .update({ estado_contacto: "renovado" })
       .eq("paciente_id", paciente_id)
       .neq("id", nueva.id)
-      .or("estado_contacto.is.null,estado_contacto.eq.pendiente");
+      .or("estado_contacto.is.null,estado_contacto.eq.pendiente")
+      .select("id");
+
     // Si esto falla no cortamos el alta: la plantilla nueva ya quedo guardada y el
     // seguimiento igual filtra por la ultima plantilla de cada paciente.
     if (cierreError) {
-      console.error("No se pudieron cerrar las plantillas anteriores:", cierreError.message);
+      console.error(`[renovacion ${nueva.id}] fallo el cierre de plantillas anteriores:`, cierreError.message);
+    } else {
+      console.log(`[renovacion ${nueva.id}] plantillas anteriores cerradas: ${cerradas?.length ?? 0}`);
     }
   }
 
