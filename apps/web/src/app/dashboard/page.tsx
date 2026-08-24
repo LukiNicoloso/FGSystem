@@ -8,20 +8,15 @@ const DIAS_AVISO = 15;
 type PlantillaRecencia = {
   id: string;
   paciente_id: string;
-  fecha_entrega: string | null;
   created_at: string;
 };
 
-// Que tan actual es una plantilla: vale la fecha de entrega y, si todavia no se
-// entrego, la fecha en que se cargo.
-function fechaDeReferencia(p: PlantillaRecencia) {
-  return p.fecha_entrega ?? p.created_at.slice(0, 10);
-}
-
+// La plantilla vigente de un paciente es la ultima que se cargo. Ordenamos por
+// created_at y no por fecha_entrega a proposito: created_at siempre esta, no se
+// puede backdatear y no depende de que la entrega este cargada. Con fecha_entrega
+// una renovacion con entrega retroactiva quedaba tapada por la plantilla anterior
+// y desaparecia de seguimiento sin dejar rastro.
 function esMasReciente(a: PlantillaRecencia, b: PlantillaRecencia) {
-  const fa = fechaDeReferencia(a);
-  const fb = fechaDeReferencia(b);
-  if (fa !== fb) return fa > fb;
   return a.created_at > b.created_at;
 }
 
@@ -50,7 +45,7 @@ export default async function DashboardPage() {
   if (pacienteIds.length > 0) {
     const { data: todas } = await supabase
       .from("plantillas")
-      .select("id, paciente_id, fecha_entrega, created_at")
+      .select("id, paciente_id, created_at")
       .in("paciente_id", pacienteIds);
 
     const ultimaPorPaciente = new Map<string, PlantillaRecencia>();
