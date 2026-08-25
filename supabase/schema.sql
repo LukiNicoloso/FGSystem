@@ -48,7 +48,18 @@ CREATE TABLE plantillas (
   recordatorio_renovacion_enviado BOOLEAN DEFAULT FALSE,
   notas TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Seguimiento de renovaciones.
+  -- estado_contacto en NULL es lo que hace que la plantilla aparezca en la pantalla
+  -- de Seguimiento; cualquiera de los valores permitidos la saca de la lista.
+  -- 'renovado' lo escribe crearPlantilla al registrar una renovacion.
+  estado_contacto TEXT CHECK (
+    estado_contacto = ANY (ARRAY['contactado', 'agendado', 'no_interesado', 'renovado'])
+  ),
+  fecha_contactado DATE,
+  fecha_agendado DATE,
+  es_renovacion BOOLEAN DEFAULT FALSE
 );
 
 -- =============================================
