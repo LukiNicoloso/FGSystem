@@ -19,6 +19,16 @@
  */
 export const FIRMA_POR_DEFECTO = "Fuskás Motion";
 
+/**
+ * Numero de FG, que recibe el aviso de todo rechazo sin importar el consultorio.
+ * El telefono_avisos de cada consultorio se suma a este, no lo reemplaza.
+ *
+ * Vive en el codigo, como la firma, porque es identidad de FG y no configuracion
+ * por consultorio. Si algun dia hay que cambiarlo sin deployar, pasa a variable de
+ * entorno.
+ */
+export const TELEFONO_AVISOS_FG = "+5491131096959";
+
 export type VariablesRecordatorio = {
   paciente: string;
   fecha: string;
