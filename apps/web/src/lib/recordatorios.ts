@@ -12,6 +12,13 @@
  * del consultorio y, mas adelante, el envio real.
  */
 
+/**
+ * Con lo que se firman los recordatorios salvo que el consultorio cargue otra cosa.
+ * Vive aca y no como default de la columna para no tener el mismo valor escrito en
+ * dos lugares que despues se desincronizan.
+ */
+export const FIRMA_POR_DEFECTO = "Fuskás Motion";
+
 export type VariablesRecordatorio = {
   paciente: string;
   fecha: string;
@@ -48,14 +55,12 @@ export function formatearHoraTurno(hora: string): string {
 /**
  * Un consultorio solo puede tener el recordatorio prendido si tiene cargados los
  * datos que la plantilla necesita. Sin esto el paciente recibiria un mensaje que
- * dice "en null".
+ * dice "en null". La firma no entra: siempre hay una, la de FIRMA_POR_DEFECTO.
  */
 export function faltantesParaRecordatorio(c: {
   direccion?: string | null;
-  recordatorio_firma?: string | null;
 }): string[] {
   const faltan: string[] = [];
   if (!c.direccion?.trim()) faltan.push("la dirección");
-  if (!c.recordatorio_firma?.trim()) faltan.push("la firma");
   return faltan;
 }

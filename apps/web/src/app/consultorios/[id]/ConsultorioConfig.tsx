@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { guardarConfiguracionConsultorio } from "../actions";
-import { armarRecordatorio, faltantesParaRecordatorio } from "@/lib/recordatorios";
+import { armarRecordatorio, faltantesParaRecordatorio, FIRMA_POR_DEFECTO } from "@/lib/recordatorios";
 
 interface Consultorio {
   id: string;
@@ -30,14 +30,11 @@ export default function ConsultorioConfig({ consultorio }: Props) {
 
   const [nombre, setNombre] = useState(consultorio.nombre);
   const [direccion, setDireccion] = useState(consultorio.direccion ?? "");
-  const [firma, setFirma] = useState(consultorio.recordatorio_firma ?? "");
+  const [firma, setFirma] = useState(consultorio.recordatorio_firma ?? FIRMA_POR_DEFECTO);
   const [telefonoAvisos, setTelefonoAvisos] = useState(consultorio.telefono_avisos ?? "");
   const [activo, setActivo] = useState(consultorio.recordatorio_activo);
 
-  const faltantes = faltantesParaRecordatorio({
-    direccion,
-    recordatorio_firma: firma,
-  });
+  const faltantes = faltantesParaRecordatorio({ direccion });
   const puedeActivar = faltantes.length === 0;
 
   // La vista previa usa un turno de ejemplo, pero la direccion y la firma son las
@@ -47,7 +44,7 @@ export default function ConsultorioConfig({ consultorio }: Props) {
     fecha: "martes 8 de septiembre",
     hora: "15:30",
     direccion: direccion.trim() || "—",
-    firma: firma.trim() || "—",
+    firma: firma.trim() || FIRMA_POR_DEFECTO,
   });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -147,9 +144,11 @@ export default function ConsultorioConfig({ consultorio }: Props) {
               value={firma}
               onChange={(e) => setFirma(e.target.value)}
               className={inputClass}
-              placeholder="Ej: Fuskás Motion"
+              placeholder={FIRMA_POR_DEFECTO}
             />
-            <p className="text-xs text-gray-400 mt-1">Cierra el mensaje, debajo del &quot;Gracias&quot;.</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Cierra el mensaje, debajo del &quot;Gracias&quot;. Si la dejás vacía firmamos como {FIRMA_POR_DEFECTO}.
+            </p>
           </div>
 
           <div>
