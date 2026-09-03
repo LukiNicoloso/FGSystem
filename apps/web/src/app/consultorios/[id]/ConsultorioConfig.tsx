@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { guardarConfiguracionConsultorio } from "../actions";
-import { armarRecordatorio, faltantesParaRecordatorio, FIRMA_POR_DEFECTO } from "@/lib/recordatorios";
+import {
+  armarRecordatorio,
+  faltantesParaRecordatorio,
+  FIRMA_POR_DEFECTO,
+  TELEFONO_AVISOS_FG,
+} from "@/lib/recordatorios";
 
 interface Consultorio {
   id: string;
@@ -152,7 +157,7 @@ export default function ConsultorioConfig({ consultorio }: Props) {
           </div>
 
           <div>
-            <label className={labelClass}>Avisar rechazos a</label>
+            <label className={labelClass}>Avisar rechazos también a</label>
             <input
               name="telefono_avisos"
               value={telefonoAvisos}
@@ -161,8 +166,9 @@ export default function ConsultorioConfig({ consultorio }: Props) {
               placeholder="Ej: +54 9 11 5620-7854"
             />
             <p className="text-xs text-gray-400 mt-1">
-              Cuando un paciente rechaza el turno, le llega un WhatsApp a este número. Si lo
-              dejás vacío, no se avisa a nadie.
+              Cuando un paciente rechaza el turno, el aviso le llega siempre a FG
+              (<span className="font-medium text-gray-500">{TELEFONO_AVISOS_FG}</span>). Si
+              querés que además le llegue a alguien del consultorio, cargá su número acá.
             </p>
           </div>
         </div>
