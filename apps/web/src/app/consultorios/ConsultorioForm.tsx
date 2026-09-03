@@ -1,19 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { crearConsultorio, editarConsultorio } from "./actions";
-
-interface Consultorio {
-  id: string;
-  nombre: string;
-}
+import { crearConsultorio } from "./actions";
 
 interface Props {
-  consultorio?: Consultorio;
   onClose: () => void;
 }
 
-export default function ConsultorioForm({ consultorio, onClose }: Props) {
+export default function ConsultorioForm({ onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -23,11 +17,7 @@ export default function ConsultorioForm({ consultorio, onClose }: Props) {
     setError("");
     const formData = new FormData(e.currentTarget);
     try {
-      if (consultorio) {
-        await editarConsultorio(consultorio.id, formData);
-      } else {
-        await crearConsultorio(formData);
-      }
+      await crearConsultorio(formData);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado");
@@ -39,15 +29,12 @@ export default function ConsultorioForm({ consultorio, onClose }: Props) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-5">
-          {consultorio ? "Editar consultorio" : "Nuevo consultorio"}
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-5">Nuevo consultorio</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
             <input
               name="nombre"
-              defaultValue={consultorio?.nombre}
               required
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ej: Consultorio Dr. García"
