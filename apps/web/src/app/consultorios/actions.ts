@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { faltantesParaRecordatorio } from "@/lib/recordatorios";
+import { faltantesParaRecordatorio, FIRMA_POR_DEFECTO } from "@/lib/recordatorios";
 
 function texto(formData: FormData, campo: string): string | null {
   const valor = (formData.get(campo) as string | null)?.trim();
@@ -28,14 +28,14 @@ export async function guardarConfiguracionConsultorio(id: string, formData: Form
   if (!nombre) throw new Error("El nombre no puede quedar vacío");
 
   const direccion = texto(formData, "direccion");
-  const recordatorio_firma = texto(formData, "recordatorio_firma");
+  const recordatorio_firma = texto(formData, "recordatorio_firma") ?? FIRMA_POR_DEFECTO;
   const telefono_avisos = texto(formData, "telefono_avisos");
   const recordatorio_activo = formData.get("recordatorio_activo") === "true";
 
   // Sin direccion ni firma la plantilla se enviaria incompleta, asi que no dejamos
   // prender el recordatorio. El formulario ya lo impide; esto cubre el resto.
   if (recordatorio_activo) {
-    const faltan = faltantesParaRecordatorio({ direccion, recordatorio_firma });
+    const faltan = faltantesParaRecordatorio({ direccion });
     if (faltan.length > 0) {
       throw new Error(
         `Para activar el recordatorio falta cargar ${faltan.join(" y ")}.`

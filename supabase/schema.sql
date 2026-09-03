@@ -14,6 +14,8 @@ CREATE TABLE consultorios (
   -- plantilla de WhatsApp vuelve a revision de Meta.
   direccion TEXT,
   recordatorio_activo BOOLEAN NOT NULL DEFAULT FALSE,
+  -- En NULL se firma con FIRMA_POR_DEFECTO (lib/recordatorios.ts). El default no
+  -- se pone aca para no tener el mismo texto en dos lugares que se desincronizan.
   recordatorio_firma TEXT,
   -- A donde se avisa cuando un paciente rechaza el turno. Vacio = no se avisa.
   telefono_avisos TEXT
