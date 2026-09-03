@@ -6,7 +6,17 @@
 CREATE TABLE consultorios (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nombre TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Recordatorio de turnos por WhatsApp.
+  -- direccion y recordatorio_firma viajan como variables de la plantilla aprobada;
+  -- el texto del mensaje no se edita desde la app porque cada edicion de una
+  -- plantilla de WhatsApp vuelve a revision de Meta.
+  direccion TEXT,
+  recordatorio_activo BOOLEAN NOT NULL DEFAULT FALSE,
+  recordatorio_firma TEXT,
+  -- A donde se avisa cuando un paciente rechaza el turno. Vacio = no se avisa.
+  telefono_avisos TEXT
 );
 
 -- Pacientes

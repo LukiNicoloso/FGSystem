@@ -2,6 +2,12 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { faltantesParaRecordatorio } from "@/lib/recordatorios";
+
+function texto(formData: FormData, campo: string): string | null {
+  const valor = (formData.get(campo) as string | null)?.trim();
+  return valor ? valor : null;
+}
 
 export async function crearConsultorio(formData: FormData) {
   const supabase = await createClient();
@@ -12,14 +18,45 @@ export async function crearConsultorio(formData: FormData) {
   revalidatePath("/consultorios");
 }
 
-export async function editarConsultorio(id: string, formData: FormData) {
+/**
+ * Guarda la ficha completa: datos del consultorio y configuracion del recordatorio.
+ */
+export async function guardarConfiguracionConsultorio(id: string, formData: FormData) {
   const supabase = await createClient();
+
+  const nombre = texto(formData, "nombre");
+  if (!nombre) throw new Error("El nombre no puede quedar vacío");
+
+  const direccion = texto(formData, "direccion");
+  const recordatorio_firma = texto(formData, "recordatorio_firma");
+  const telefono_avisos = texto(formData, "telefono_avisos");
+  const recordatorio_activo = formData.get("recordatorio_activo") === "true";
+
+  // Sin direccion ni firma la plantilla se enviaria incompleta, asi que no dejamos
+  // prender el recordatorio. El formulario ya lo impide; esto cubre el resto.
+  if (recordatorio_activo) {
+    const faltan = faltantesParaRecordatorio({ direccion, recordatorio_firma });
+    if (faltan.length > 0) {
+      throw new Error(
+        `Para activar el recordatorio falta cargar ${faltan.join(" y ")}.`
+      );
+    }
+  }
+
   const { error } = await supabase
     .from("consultorios")
-    .update({ nombre: formData.get("nombre") })
+    .update({
+      nombre,
+      direccion,
+      recordatorio_activo,
+      recordatorio_firma,
+      telefono_avisos,
+    })
     .eq("id", id);
   if (error) throw new Error(error.message);
+
   revalidatePath("/consultorios");
+  revalidatePath(`/consultorios/${id}`);
 }
 
 export async function eliminarConsultorio(id: string) {
