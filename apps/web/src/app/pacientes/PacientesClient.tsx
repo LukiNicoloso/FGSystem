@@ -23,9 +23,10 @@ interface Paciente {
 interface Props {
   pacientes: Paciente[];
   consultorios: Consultorio[];
+  sinNormalizar: number;
 }
 
-export default function PacientesClient({ pacientes, consultorios }: Props) {
+export default function PacientesClient({ pacientes, consultorios, sinNormalizar }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [editando, setEditando] = useState<Paciente | null>(null);
   const [eliminando, setEliminando] = useState<string | null>(null);
@@ -70,10 +71,23 @@ export default function PacientesClient({ pacientes, consultorios }: Props) {
           <h1 className="text-2xl font-bold text-gray-900">Pacientes</h1>
           <p className="text-sm text-gray-500 mt-0.5">{pacientes.length} registrados</p>
         </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/pacientes/normalizar"
+            className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center gap-1.5"
+          >
+            Celulares para WhatsApp
+            {sinNormalizar > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                {sinNormalizar}
+              </span>
+            )}
+          </Link>
         <button onClick={() => setShowForm(true)}
           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
           + Nuevo paciente
         </button>
+        </div>
       </div>
 
       <div className="mb-4">

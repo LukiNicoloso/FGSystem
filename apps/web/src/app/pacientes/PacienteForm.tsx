@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { crearPaciente, editarPaciente } from "./actions";
+import { FORMATO_ESPERADO } from "@/lib/telefono";
 
 interface Consultorio {
   id: string;
@@ -90,8 +91,9 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
               defaultValue={paciente?.celular}
               required
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ej: 5491123456789"
+              placeholder="Ej: 11 5620-7854"
             />
+            <p className="text-xs text-gray-400 mt-1">{FORMATO_ESPERADO}</p>
           </div>
 
           <div>
