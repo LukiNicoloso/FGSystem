@@ -13,6 +13,7 @@ interface Turno {
   fecha: string;
   hora: string;
   estado: string;
+  tipo: string;
   recordatorio_enviado: boolean;
   pacientes: Paciente | null;
   consultorios: Consultorio | null;

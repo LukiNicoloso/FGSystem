@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TurnoForm from "./TurnoForm";
 import { eliminarTurno } from "./actions";
+import { etiquetaTipoTurno } from "@/lib/recordatorios";
 
 interface Paciente { id: string; nombre: string; dni: string | null }
 interface Consultorio { id: string; nombre: string }
@@ -14,6 +15,7 @@ interface Turno {
   fecha: string;
   hora: string;
   estado: string;
+  tipo: string;
   pacientes: Paciente | null;
   consultorios: Consultorio | null;
 }
@@ -240,6 +242,9 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
                             {turno.consultorios && (
                               <p className="text-xs text-gray-500">{turno.consultorios.nombre}</p>
                             )}
+                            <span className="inline-block mt-0.5 mr-1 text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                              {etiquetaTipoTurno(turno.tipo)}
+                            </span>
                             <span className={`inline-block mt-0.5 text-xs px-1.5 py-0.5 rounded-full ${estadoConfig[turno.estado]?.className ?? ""}`}>
                               {estadoConfig[turno.estado]?.label ?? turno.estado}
                             </span>
