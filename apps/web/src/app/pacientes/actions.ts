@@ -3,15 +3,33 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { subirFotoCloudinary } from "@/lib/cloudinary";
+import { normalizarCelular, FORMATO_ESPERADO } from "@/lib/telefono";
+
+/**
+ * El celular se valida al guardar para no arrastrar numeros que despues no se
+ * puedan cruzar con las respuestas de WhatsApp. Guardamos los dos formatos: el que
+ * escribio la usuaria y el normalizado, que es con el que trabaja Twilio.
+ */
+function celularValidado(formData: FormData): { celular: string; celular_e164: string } {
+  const celular = ((formData.get("celular") as string | null) ?? "").trim();
+  const r = normalizarCelular(celular);
+  if (!r.ok) {
+    throw new Error(`El celular no es válido (${r.motivo}). ${FORMATO_ESPERADO}`);
+  }
+  return { celular, celular_e164: r.e164 };
+}
 
 export async function crearPaciente(formData: FormData) {
   const supabase = await createClient();
   const deporte = formData.get("deporte") === "on";
 
+  const { celular, celular_e164 } = celularValidado(formData);
+
   const { data: paciente, error } = await supabase.from("pacientes").insert({
     nombre: formData.get("nombre"),
     dni: formData.get("dni") || null,
-    celular: formData.get("celular"),
+    celular,
+    celular_e164,
     consultorio_id: formData.get("consultorio_id") || null,
     edad: formData.get("edad") ? Number(formData.get("edad")) : null,
     deporte,
@@ -54,12 +72,14 @@ export async function crearPaciente(formData: FormData) {
 export async function editarPaciente(id: string, formData: FormData) {
   const supabase = await createClient();
   const deporte = formData.get("deporte") === "on";
+  const { celular, celular_e164 } = celularValidado(formData);
   const { error } = await supabase
     .from("pacientes")
     .update({
       nombre: formData.get("nombre"),
       dni: formData.get("dni") || null,
-      celular: formData.get("celular"),
+      celular,
+      celular_e164,
       consultorio_id: formData.get("consultorio_id") || null,
       edad: formData.get("edad") ? Number(formData.get("edad")) : null,
       deporte,

@@ -28,6 +28,10 @@ CREATE TABLE pacientes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nombre TEXT NOT NULL,
   celular TEXT NOT NULL,
+  -- El mismo celular en formato internacional (+5491156207854). Es la unica forma
+  -- de cruzar una respuesta de WhatsApp con su paciente: Twilio solo nos manda el
+  -- numero. Lo escribe lib/telefono.ts al guardar.
+  celular_e164 TEXT,
   consultorio_id UUID REFERENCES consultorios(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -88,6 +92,8 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE INDEX pacientes_celular_e164_idx ON pacientes (celular_e164);
 
 CREATE TRIGGER pacientes_updated_at BEFORE UPDATE ON pacientes
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
