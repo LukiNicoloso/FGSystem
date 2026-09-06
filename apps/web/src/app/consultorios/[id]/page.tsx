@@ -15,14 +15,16 @@ export default async function ConsultorioPage({
 
   const { data: consultorio } = await supabase
     .from("consultorios")
-    .select("id, nombre, direccion, recordatorio_activo, recordatorio_firma, telefono_avisos")
+    .select(
+      "id, nombre, direccion, recordatorio_estudio_activo, recordatorio_entrega_activo, recordatorio_firma, telefono_avisos"
+    )
     .eq("id", id)
     .single();
 
   if (!consultorio) notFound();
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl">
       <div className="mb-6">
         <Link href="/consultorios" className="text-sm text-blue-600 hover:underline">
           ← Volver a consultorios

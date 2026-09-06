@@ -13,7 +13,9 @@ CREATE TABLE consultorios (
   -- el texto del mensaje no se edita desde la app porque cada edicion de una
   -- plantilla de WhatsApp vuelve a revision de Meta.
   direccion TEXT,
-  recordatorio_activo BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Un switch por tipo de turno: no todos los consultorios avisan de las dos cosas.
+  recordatorio_estudio_activo BOOLEAN NOT NULL DEFAULT FALSE,
+  recordatorio_entrega_activo BOOLEAN NOT NULL DEFAULT FALSE,
   -- En NULL se firma con FIRMA_POR_DEFECTO (lib/recordatorios.ts). El default no
   -- se pone aca para no tener el mismo texto en dos lugares que se desincronizan.
   recordatorio_firma TEXT,
@@ -41,6 +43,8 @@ CREATE TABLE turnos (
   fecha DATE NOT NULL,
   hora TIME NOT NULL,
   estado estado_turno DEFAULT 'pendiente',
+  -- Define que plantilla de WhatsApp se manda: la de estudio o la de entrega.
+  tipo TEXT NOT NULL DEFAULT 'estudio' CHECK (tipo = ANY (ARRAY['estudio', 'entrega'])),
   recordatorio_enviado BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

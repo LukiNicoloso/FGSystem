@@ -9,7 +9,16 @@ interface Consultorio {
   id: string;
   nombre: string;
   created_at: string;
-  recordatorio_activo: boolean;
+  recordatorio_estudio_activo: boolean;
+  recordatorio_entrega_activo: boolean;
+}
+
+// Que recordatorios tiene prendidos, para verlo de un vistazo en la lista.
+function recordatoriosDe(c: Consultorio): string[] {
+  const activos: string[] = [];
+  if (c.recordatorio_estudio_activo) activos.push("Estudio");
+  if (c.recordatorio_entrega_activo) activos.push("Entrega");
+  return activos;
 }
 
 interface Props {
@@ -69,9 +78,9 @@ export default function ConsultoriosClient({ consultorios }: Props) {
                     </Link>
                   </td>
                   <td className="px-5 py-3">
-                    {c.recordatorio_activo ? (
+                    {recordatoriosDe(c).length > 0 ? (
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                        🔔 Activos
+                        🔔 {recordatoriosDe(c).join(" + ")}
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">

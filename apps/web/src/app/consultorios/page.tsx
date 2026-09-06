@@ -7,7 +7,7 @@ export default async function ConsultoriosPage() {
   const supabase = await createClient();
   const { data: consultorios } = await supabase
     .from("consultorios")
-    .select("id, nombre, created_at, recordatorio_activo")
+    .select("id, nombre, created_at, recordatorio_estudio_activo, recordatorio_entrega_activo")
     .order("nombre");
 
   return <ConsultoriosClient consultorios={consultorios ?? []} />;

@@ -30,15 +30,16 @@ export async function guardarConfiguracionConsultorio(id: string, formData: Form
   const direccion = texto(formData, "direccion");
   const recordatorio_firma = texto(formData, "recordatorio_firma") ?? FIRMA_POR_DEFECTO;
   const telefono_avisos = texto(formData, "telefono_avisos");
-  const recordatorio_activo = formData.get("recordatorio_activo") === "true";
+  const recordatorio_estudio_activo = formData.get("recordatorio_estudio_activo") === "true";
+  const recordatorio_entrega_activo = formData.get("recordatorio_entrega_activo") === "true";
 
-  // Sin direccion ni firma la plantilla se enviaria incompleta, asi que no dejamos
-  // prender el recordatorio. El formulario ya lo impide; esto cubre el resto.
-  if (recordatorio_activo) {
+  // Sin direccion la plantilla se enviaria incompleta, asi que no dejamos prender
+  // ningun recordatorio. El formulario ya lo impide; esto cubre el resto.
+  if (recordatorio_estudio_activo || recordatorio_entrega_activo) {
     const faltan = faltantesParaRecordatorio({ direccion });
     if (faltan.length > 0) {
       throw new Error(
-        `Para activar el recordatorio falta cargar ${faltan.join(" y ")}.`
+        `Para activar los recordatorios falta cargar ${faltan.join(" y ")}.`
       );
     }
   }
@@ -48,7 +49,8 @@ export async function guardarConfiguracionConsultorio(id: string, formData: Form
     .update({
       nombre,
       direccion,
-      recordatorio_activo,
+      recordatorio_estudio_activo,
+      recordatorio_entrega_activo,
       recordatorio_firma,
       telefono_avisos,
     })

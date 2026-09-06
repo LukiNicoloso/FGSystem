@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { crearTurno, editarTurno } from "./actions";
+import { TIPOS_TURNO, TIPO_TURNO_POR_DEFECTO } from "@/lib/recordatorios";
 
 interface Paciente { id: string; nombre: string; dni: string | null }
 interface Consultorio { id: string; nombre: string }
@@ -12,6 +13,7 @@ interface Turno {
   fecha: string;
   hora: string;
   estado: string;
+  tipo: string;
 }
 
 interface Props {
@@ -23,10 +25,13 @@ interface Props {
   onClose: () => void;
 }
 
+// Solo se ofrecen al editar: al dar de alta, todo turno nace pendiente de
+// confirmacion y es el paciente quien lo mueve respondiendo por WhatsApp.
 const estados = [
   { value: "pendiente", label: "Pendiente confirmación" },
   { value: "confirmado", label: "Confirmado" },
   { value: "cancelado", label: "Cancelado" },
+  { value: "completado", label: "Completado" },
 ];
 
 export default function TurnoForm({ pacientes, consultorios, turno, fechaDefault, horaDefault, onClose }: Props) {
@@ -140,6 +145,30 @@ export default function TurnoForm({ pacientes, consultorios, turno, fechaDefault
             </select>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de turno</label>
+            <div className="grid grid-cols-2 gap-2">
+              {TIPOS_TURNO.map((t) => (
+                <label
+                  key={t.value}
+                  className="flex items-start gap-2 border border-gray-300 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+                >
+                  <input
+                    type="radio"
+                    name="tipo"
+                    value={t.value}
+                    defaultChecked={(turno?.tipo ?? TIPO_TURNO_POR_DEFECTO) === t.value}
+                    className="mt-0.5 accent-blue-600"
+                  />
+                  <span className="text-sm text-gray-900 leading-tight">{t.label}</span>
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Define qué recordatorio recibe el paciente el día anterior.
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
@@ -163,18 +192,25 @@ export default function TurnoForm({ pacientes, consultorios, turno, fechaDefault
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-            <select
-              name="estado"
-              defaultValue={turno?.estado ?? "pendiente"}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {estados.map((e) => (
-                <option key={e.value} value={e.value}>{e.label}</option>
-              ))}
-            </select>
-          </div>
+          {turno ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+              <select
+                name="estado"
+                defaultValue={turno.estado}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {estados.map((e) => (
+                  <option key={e.value} value={e.value}>{e.label}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+              El turno queda <span className="font-medium text-gray-500">pendiente de confirmación</span> hasta
+              que el paciente responda el recordatorio por WhatsApp.
+            </p>
+          )}
 
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex gap-3 pt-2">

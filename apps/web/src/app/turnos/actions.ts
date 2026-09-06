@@ -5,12 +5,14 @@ import { revalidatePath } from "next/cache";
 
 export async function crearTurno(formData: FormData) {
   const supabase = await createClient();
+  // Todo turno nace pendiente: lo confirma el paciente respondiendo el recordatorio.
   const { error } = await supabase.from("turnos").insert({
     paciente_id: formData.get("paciente_id"),
     consultorio_id: formData.get("consultorio_id") || null,
     fecha: formData.get("fecha"),
     hora: formData.get("hora"),
-    estado: formData.get("estado") || "pendiente",
+    tipo: formData.get("tipo") || "estudio",
+    estado: "pendiente",
   });
   if (error) throw new Error(error.message);
   revalidatePath("/turnos");
@@ -25,6 +27,7 @@ export async function editarTurno(id: string, formData: FormData) {
       consultorio_id: formData.get("consultorio_id") || null,
       fecha: formData.get("fecha"),
       hora: formData.get("hora"),
+      tipo: formData.get("tipo") || "estudio",
       estado: formData.get("estado"),
     })
     .eq("id", id);
