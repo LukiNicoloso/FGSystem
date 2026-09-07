@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { crearPaciente, editarPaciente } from "./actions";
-import { FORMATO_ESPERADO } from "@/lib/telefono";
+import { FORMATO_ESPERADO, EJEMPLO_CELULAR, normalizarCelular, mostrarE164 } from "@/lib/telefono";
 
 interface Consultorio {
   id: string;
@@ -28,6 +28,13 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [previews, setPreviews] = useState<string[]>([]);
+  const [celular, setCelular] = useState(paciente?.celular ?? "");
+
+  // Confirmacion en vivo de como se va a guardar el numero. El error recien aparece
+  // cuando ya escribio lo suficiente como para que valga la pena avisarle: si no,
+  // marca en rojo desde la primera tecla.
+  const chequeoCelular = celular.trim() ? normalizarCelular(celular) : null;
+  const suficientesDigitos = celular.replace(/\D/g, "").length >= 8;
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -88,12 +95,23 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
             </label>
             <input
               name="celular"
-              defaultValue={paciente?.celular}
+              value={celular}
+              onChange={(e) => setCelular(e.target.value)}
               required
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ej: 11 5620-7854"
+              placeholder={`Ej: ${EJEMPLO_CELULAR}`}
             />
-            <p className="text-xs text-gray-400 mt-1">{FORMATO_ESPERADO}</p>
+            {chequeoCelular?.ok ? (
+              <p className="text-xs text-green-700 mt-1">
+                ✓ Se va a guardar como {mostrarE164(chequeoCelular.e164)}
+              </p>
+            ) : chequeoCelular && suficientesDigitos ? (
+              <p className="text-xs text-amber-700 mt-1">
+                {chequeoCelular.motivo}. Ej: {EJEMPLO_CELULAR}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-400 mt-1">{FORMATO_ESPERADO}</p>
+            )}
           </div>
 
           <div>

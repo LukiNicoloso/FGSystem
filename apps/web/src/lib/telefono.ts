@@ -23,8 +23,11 @@ export type ResultadoTelefono =
   | { ok: true; e164: string }
   | { ok: false; motivo: string };
 
+export const EJEMPLO_CELULAR = "+54 9 11 5620-7854";
+
 export const FORMATO_ESPERADO =
-  "Código de área sin el 0 y número sin el 15. Ejemplos: 11 5620-7854, 351 456-7890.";
+  "Se puede escribir con o sin +54, con guiones o sin ellos. Lo importante es el " +
+  `código de área sin el 0 y el número sin el 15. Ej: ${EJEMPLO_CELULAR}.`;
 
 /** Unico codigo de area de dos digitos del pais. */
 const AREAS_2 = new Set(["11"]);
