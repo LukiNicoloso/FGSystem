@@ -45,5 +45,8 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  // /api queda afuera a proposito: son el cron y el webhook de Twilio, que no
+  // traen cookie de sesion y se comerian el redirect a /login. Cada una se
+  // autentica sola (CRON_SECRET y la firma de Twilio).
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };

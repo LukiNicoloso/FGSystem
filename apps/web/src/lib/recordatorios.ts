@@ -88,6 +88,22 @@ export function armarRecordatorio(tipo: TipoTurno, v: VariablesRecordatorio): st
   return [...lineas, "", "Gracias,", v.firma].join("\n");
 }
 
+/**
+ * Argentina no aplica horario de verano: siempre UTC-3. Sin esto, usar la fecha
+ * UTC hace que despues de las 21:00 hora local el sistema ya crea que es el dia
+ * siguiente.
+ */
+export function fechaEnArgentina(base: Date = new Date()): string {
+  return new Date(base.getTime() - 3 * 60 * 60 * 1000).toISOString().split("T")[0];
+}
+
+/** El dia siguiente en hora argentina: los turnos que hay que recordar hoy. */
+export function fechaDeManana(base: Date = new Date()): string {
+  const d = new Date(fechaEnArgentina(base) + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().split("T")[0];
+}
+
 /** "2026-09-08" -> "martes 8 de septiembre" */
 export function formatearFechaTurno(fecha: string): string {
   return new Date(fecha + "T00:00:00").toLocaleDateString("es-AR", {
