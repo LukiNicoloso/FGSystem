@@ -29,11 +29,24 @@ export function configuracionTwilio(): ConfigTwilio | null {
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const from = process.env.TWILIO_WHATSAPP_FROM;
   if (!accountSid || !authToken || !from) return null;
+
+  // Un numero de prueba mal cargado es peor que no tenerlo: si lo ignoraramos en
+  // silencio, los mensajes se irian a los pacientes reales creyendo que estamos
+  // probando. Preferimos que no salga nada. Pasa, por ejemplo, cuando se baja la
+  // variable con `vercel env pull` y viene como "[SENSITIVE]".
+  const crudoDePrueba = process.env.RECORDATORIOS_NUMERO_PRUEBA?.trim();
+  if (crudoDePrueba && !/^\+\d{8,15}$/.test(crudoDePrueba)) {
+    throw new Error(
+      `RECORDATORIOS_NUMERO_PRUEBA no es un número válido en formato internacional. ` +
+        `Mientras esté mal cargada no se envía nada, para no escribirle a pacientes reales.`
+    );
+  }
+
   return {
     accountSid,
     authToken,
     from,
-    numeroDePrueba: process.env.RECORDATORIOS_NUMERO_PRUEBA || null,
+    numeroDePrueba: crudoDePrueba || null,
   };
 }
 
