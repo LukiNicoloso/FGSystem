@@ -50,6 +50,7 @@ CREATE TABLE turnos (
   -- Define que plantilla de WhatsApp se manda: la de estudio o la de entrega.
   tipo TEXT NOT NULL DEFAULT 'estudio' CHECK (tipo = ANY (ARRAY['estudio', 'entrega'])),
   recordatorio_enviado BOOLEAN DEFAULT FALSE,
+  recordatorio_enviado_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
