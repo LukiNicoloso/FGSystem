@@ -104,13 +104,16 @@ export function fechaDeManana(base: Date = new Date()): string {
   return d.toISOString().split("T")[0];
 }
 
-/** "2026-09-08" -> "martes 8 de septiembre" */
+/**
+ * "2026-09-08" -> "martes 8 de septiembre"
+ *
+ * Sin quitar la coma queda "su turno el martes, 8 de septiembre", que en medio de
+ * la frase se lee mal.
+ */
 export function formatearFechaTurno(fecha: string): string {
-  return new Date(fecha + "T00:00:00").toLocaleDateString("es-AR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  return new Date(fecha + "T00:00:00")
+    .toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })
+    .replace(",", "");
 }
 
 /** "15:30:00" -> "15:30" */
