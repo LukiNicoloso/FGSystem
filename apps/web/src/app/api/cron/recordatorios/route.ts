@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { enviarRecordatoriosDeManana } from "@/lib/envio-recordatorios";
+import { enviarRecordatorios } from "@/lib/envio-recordatorios";
 
 /**
  * Cron diario de recordatorios. Vercel lo invoca a las 21:00 UTC, que son las
@@ -11,6 +11,9 @@ import { enviarRecordatoriosDeManana } from "@/lib/envio-recordatorios";
  *
  * Con ?simulacion=1 devuelve los mensajes que mandaria sin mandar ninguno ni tocar
  * la base. Es la forma de revisar un envio antes de que salga.
+ *
+ * Con ?fecha=YYYY-MM-DD manda los de ese dia en vez de los de mañana, para poder
+ * reenviar un dia puntual si el cron fallo.
  */
 
 export const dynamic = "force-dynamic";
@@ -27,10 +30,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const simulacion = new URL(request.url).searchParams.get("simulacion") === "1";
+  const params = new URL(request.url).searchParams;
+  const simulacion = params.get("simulacion") === "1";
+
+  const fecha = params.get("fecha") ?? undefined;
+  if (fecha && !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    return NextResponse.json({ error: "fecha inválida, se espera YYYY-MM-DD" }, { status: 400 });
+  }
 
   try {
-    const r = await enviarRecordatoriosDeManana({ simulacion });
+    const r = await enviarRecordatorios({ simulacion, fecha });
 
     console.log(
       `[recordatorios ${r.fecha}]${r.simulacion ? " SIMULACION" : ""} ` +

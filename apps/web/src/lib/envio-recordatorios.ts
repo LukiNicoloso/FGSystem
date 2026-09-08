@@ -54,11 +54,13 @@ type TurnoConDatos = {
   } | null;
 };
 
-export async function enviarRecordatoriosDeManana(
-  opciones: { simulacion?: boolean } = {}
+export async function enviarRecordatorios(
+  opciones: { simulacion?: boolean; fecha?: string } = {}
 ): Promise<ResultadoEnvio> {
   const simulacion = opciones.simulacion ?? false;
-  const fecha = fechaDeManana();
+  // Por defecto los turnos de mañana, que es lo que hace el cron. La fecha
+  // explicita sirve para reenviar un dia puntual si el cron fallo, y para probar.
+  const fecha = opciones.fecha ?? fechaDeManana();
 
   const config = configuracionTwilio();
   if (!config && !simulacion) {
