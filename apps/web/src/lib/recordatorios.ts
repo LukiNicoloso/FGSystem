@@ -37,6 +37,21 @@ export const TIPOS_TURNO: {
 
 export const TIPO_TURNO_POR_DEFECTO: TipoTurno = "estudio";
 
+/**
+ * ContentSid de la plantilla aprobada de cada tipo. El texto real vive en Twilio
+ * (definido en twilio/plantillas.json); acá solo mandamos las variables.
+ */
+export function contentSidDe(tipo: TipoTurno): string | undefined {
+  return tipo === "entrega"
+    ? process.env.TWILIO_CONTENT_SID_RECORDATORIO_ENTREGA
+    : process.env.TWILIO_CONTENT_SID_RECORDATORIO_ESTUDIO;
+}
+
+/** Las variables {{1}}..{{5}} de la plantilla, en el orden que espera Twilio. */
+export function variablesDeRecordatorio(v: VariablesRecordatorio): Record<string, string> {
+  return { "1": v.paciente, "2": v.fecha, "3": v.hora, "4": v.direccion, "5": v.firma };
+}
+
 export function etiquetaTipoTurno(tipo: string): string {
   return TIPOS_TURNO.find((t) => t.value === tipo)?.label ?? tipo;
 }

@@ -6,6 +6,8 @@ import {
   formatearHoraTurno,
   FIRMA_POR_DEFECTO,
   fechaDeManana,
+  contentSidDe,
+  variablesDeRecordatorio,
   type TipoTurno,
 } from "@/lib/recordatorios";
 
@@ -118,13 +120,18 @@ export async function enviarRecordatoriosDeManana(
       continue;
     }
 
-    const cuerpo = armarRecordatorio(tipo, {
+    const variables = {
       paciente: paciente.trim().split(/\s+/)[0],
       fecha: formatearFechaTurno(t.fecha),
       hora: formatearHoraTurno(t.hora),
       direccion: consultorio.direccion ?? consultorio.nombre,
       firma: consultorio.recordatorio_firma?.trim() || FIRMA_POR_DEFECTO,
-    });
+    };
+    // El cuerpo se arma igual para poder mostrarlo en el resultado, pero lo que
+    // viaja es la plantilla con botones: asi la respuesta llega como un id exacto
+    // y no como texto libre que haya que interpretar.
+    const cuerpo = armarRecordatorio(tipo, variables);
+    const contentSid = contentSidDe(tipo);
 
     if (simulacion || !config) {
       resultado.enviados.push({
@@ -139,7 +146,12 @@ export async function enviarRecordatoriosDeManana(
     }
 
     try {
-      const envio = await enviarWhatsapp(config, { para: celular, cuerpo });
+      const envio = await enviarWhatsapp(config, {
+        para: celular,
+        cuerpo,
+        contentSid,
+        variables: contentSid ? variablesDeRecordatorio(variables) : undefined,
+      });
 
       // Recien marcamos como enviado si Twilio lo acepto: si falla, el proximo dia
       // se reintenta en vez de perderse.

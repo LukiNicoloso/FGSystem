@@ -1,0 +1,79 @@
+{
+  "_comentario": [
+    "Definicion de las plantillas de WhatsApp que manda FGSystem.",
+    "Viven acá y no solo en el panel de Twilio para que el texto que reciben los",
+    "pacientes quede versionado y revisable en git.",
+    "",
+    "Variables: {{1}} paciente, {{2}} fecha, {{3}} hora, {{4}} direccion, {{5}} firma.",
+    "En el aviso de rechazo: {{1}} paciente, {{2}} fecha, {{3}} hora, {{4}} consultorio.",
+    "",
+    "Los botones devuelven su id en ButtonPayload, asi la respuesta llega exacta en",
+    "vez de haber que interpretar texto libre.",
+    "",
+    "Para crear o actualizar: node twilio/crear-plantillas.mjs"
+  ],
+
+  "recordatorio_estudio": {
+    "friendly_name": "fg_recordatorio_estudio",
+    "language": "es",
+    "variables": {
+      "1": "Lucas",
+      "2": "martes 8 de septiembre",
+      "3": "08:30",
+      "4": "Sanabria 3282 2C, Devoto",
+      "5": "Fuskás Motion"
+    },
+    "types": {
+      "twilio/quick-reply": {
+        "body": "Hola {{1}}, le recordamos su turno el {{2}} a las {{3}} en {{4}}.\n\n¿Podría ayudarnos confirmando su asistencia?\n\nGracias,\n{{5}}",
+        "actions": [
+          { "title": "Sí, confirmo", "id": "si" },
+          { "title": "No puedo", "id": "no" }
+        ]
+      },
+      "twilio/text": {
+        "body": "Hola {{1}}, le recordamos su turno el {{2}} a las {{3}} en {{4}}.\n\n¿Podría ayudarnos confirmando su asistencia? Responda SI o NO.\n\nGracias,\n{{5}}"
+      }
+    }
+  },
+
+  "recordatorio_entrega": {
+    "friendly_name": "fg_recordatorio_entrega",
+    "language": "es",
+    "variables": {
+      "1": "Lucas",
+      "2": "martes 8 de septiembre",
+      "3": "08:30",
+      "4": "Sanabria 3282 2C, Devoto",
+      "5": "Fuskás Motion"
+    },
+    "types": {
+      "twilio/quick-reply": {
+        "body": "Hola {{1}}, le recordamos su turno para la entrega de sus plantillas el {{2}} a las {{3}} en {{4}}.\n\nPor favor traiga el calzado que usa habitualmente, así las probamos en el momento.\n\n¿Podría ayudarnos confirmando su asistencia?\n\nGracias,\n{{5}}",
+        "actions": [
+          { "title": "Sí, confirmo", "id": "si" },
+          { "title": "No puedo", "id": "no" }
+        ]
+      },
+      "twilio/text": {
+        "body": "Hola {{1}}, le recordamos su turno para la entrega de sus plantillas el {{2}} a las {{3}} en {{4}}.\n\nPor favor traiga el calzado que usa habitualmente, así las probamos en el momento.\n\n¿Podría ayudarnos confirmando su asistencia? Responda SI o NO.\n\nGracias,\n{{5}}"
+      }
+    }
+  },
+
+  "aviso_rechazo": {
+    "friendly_name": "fg_aviso_rechazo",
+    "language": "es",
+    "variables": {
+      "1": "Lucas Nicoloso",
+      "2": "martes 8 de septiembre",
+      "3": "08:30",
+      "4": "Mariana"
+    },
+    "types": {
+      "twilio/text": {
+        "body": "{{1}} rechazó su turno del {{2}} a las {{3}} en {{4}}."
+      }
+    }
+  }
+}
