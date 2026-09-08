@@ -27,6 +27,8 @@ export type MotivoSalteo =
 export type ResultadoEnvio = {
   fecha: string;
   simulacion: boolean;
+  /** false mientras Twilio no este configurado en este entorno. */
+  configurado: boolean;
   enviados: {
     turnoId: string;
     paciente: string;
@@ -62,12 +64,10 @@ export async function enviarRecordatorios(
   // explicita sirve para reenviar un dia puntual si el cron fallo, y para probar.
   const fecha = opciones.fecha ?? fechaDeManana();
 
+  // Sin Twilio no se manda nada, pero no es un error: es el estado normal mientras
+  // la feature no esta habilitada en el entorno. Devolver 500 todos los dias
+  // ensenaria a ignorar los errores del cron, que es justo lo que no queremos.
   const config = configuracionTwilio();
-  if (!config && !simulacion) {
-    throw new Error(
-      "Falta configurar Twilio (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM)"
-    );
-  }
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -86,6 +86,7 @@ export async function enviarRecordatorios(
   const resultado: ResultadoEnvio = {
     fecha,
     simulacion,
+    configurado: Boolean(config),
     enviados: [],
     salteados: [],
     fallidos: [],
