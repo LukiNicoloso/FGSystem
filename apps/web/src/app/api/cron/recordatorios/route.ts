@@ -41,6 +41,12 @@ export async function GET(request: Request) {
   try {
     const r = await enviarRecordatorios({ simulacion, fecha });
 
+    if (!r.configurado && !r.simulacion) {
+      console.warn(
+        `[recordatorios ${r.fecha}] Twilio no está configurado en este entorno: ` +
+          `${r.enviados.length} turnos quedaron sin avisar`
+      );
+    }
     console.log(
       `[recordatorios ${r.fecha}]${r.simulacion ? " SIMULACION" : ""} ` +
         `enviados: ${r.enviados.length}, salteados: ${r.salteados.length}, fallidos: ${r.fallidos.length}`
