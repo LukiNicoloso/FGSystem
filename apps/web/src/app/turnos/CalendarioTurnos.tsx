@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import TurnoForm from "./TurnoForm";
 import { eliminarTurno } from "./actions";
 import { etiquetaTipoTurno } from "@/lib/recordatorios";
+import { estadoVisualDeTurno, contarQueRequierenAtencion } from "@/lib/turnos";
 
 interface Paciente { id: string; nombre: string; dni: string | null }
 interface Consultorio { id: string; nombre: string }
@@ -16,6 +17,8 @@ interface Turno {
   hora: string;
   estado: string;
   tipo: string;
+  respuesta_paciente: string | null;
+  recordatorio_enviado: boolean;
   pacientes: Paciente | null;
   consultorios: Consultorio | null;
 }
@@ -45,12 +48,6 @@ const COLORES = [
   { light: "bg-pink-100", text: "text-pink-700", dot: "bg-pink-500", border: "border-pink-300" },
   { light: "bg-teal-100", text: "text-teal-700", dot: "bg-teal-500", border: "border-teal-300" },
 ];
-
-const estadoConfig: Record<string, { label: string; className: string }> = {
-  pendiente: { label: "Pendiente confirmación", className: "bg-yellow-100 text-yellow-700" },
-  confirmado: { label: "Confirmado", className: "bg-green-100 text-green-700" },
-  cancelado: { label: "Cancelado", className: "bg-red-100 text-red-700" },
-};
 
 export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesStr }: Props) {
   const router = useRouter();
@@ -131,11 +128,31 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
     ? new Date(diaSeleccionado + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })
     : "";
 
+  // Los que necesitan que alguien haga algo, solo de hoy en adelante: los de un
+  // mes pasado ya no se pueden gestionar y solo serian ruido.
+  const atencion = contarQueRequierenAtencion(turnos.filter((t) => t.fecha >= hoyStr));
+
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Turnos</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Hacé click en un día para ver los horarios disponibles</p>
+      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Turnos</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Hacé click en un día para ver los horarios disponibles</p>
+        </div>
+        {(atencion.sinResponder > 0 || atencion.rechazados > 0) && (
+          <div className="flex gap-2 flex-wrap">
+            {atencion.sinResponder > 0 && (
+              <span className="px-3 py-1.5 rounded-lg text-sm font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                {atencion.sinResponder} sin responder
+              </span>
+            )}
+            {atencion.rechazados > 0 && (
+              <span className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-700 border border-red-200">
+                {atencion.rechazados} rechazado{atencion.rechazados === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -245,8 +262,8 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
                             <span className="inline-block mt-0.5 mr-1 text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
                               {etiquetaTipoTurno(turno.tipo)}
                             </span>
-                            <span className={`inline-block mt-0.5 text-xs px-1.5 py-0.5 rounded-full ${estadoConfig[turno.estado]?.className ?? ""}`}>
-                              {estadoConfig[turno.estado]?.label ?? turno.estado}
+                            <span className={`inline-block mt-0.5 text-xs px-1.5 py-0.5 rounded-full ${estadoVisualDeTurno(turno).className}`}>
+                              {estadoVisualDeTurno(turno).label}
                             </span>
                           </div>
                           <div className="flex gap-2 shrink-0 pt-0.5">
