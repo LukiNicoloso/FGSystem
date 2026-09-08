@@ -49,10 +49,13 @@ function firmaValida(url: string, campos: Record<string, string>, firma: string,
 }
 
 export async function POST(request: Request) {
+  // Sin credenciales no hay con que verificar la firma, asi que no se procesa nada.
+  // Devolvemos 503 y no 200: un 200 a un request sin firmar da a entender que el
+  // endpoint lo acepto, cuando en realidad no esta operativo en este entorno.
   const config = configuracionTwilio();
   if (!config) {
-    console.error("[webhook] Twilio no está configurado");
-    return respuestaVacia();
+    console.error("[webhook] Twilio no está configurado, no se procesa el mensaje");
+    return new Response("Webhook no configurado", { status: 503 });
   }
 
   const form = await request.formData();
