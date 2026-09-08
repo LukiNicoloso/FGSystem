@@ -51,6 +51,10 @@ CREATE TABLE turnos (
   tipo TEXT NOT NULL DEFAULT 'estudio' CHECK (tipo = ANY (ARRAY['estudio', 'entrega'])),
   recordatorio_enviado BOOLEAN DEFAULT FALSE,
   recordatorio_enviado_at TIMESTAMPTZ,
+  -- Que contesto el paciente al recordatorio. Distingue una cancelacion pedida por
+  -- el paciente de una que hizo el consultorio a mano.
+  respuesta_paciente TEXT CHECK (respuesta_paciente = ANY (ARRAY['si', 'no'])),
+  respuesta_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
