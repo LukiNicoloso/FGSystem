@@ -84,23 +84,27 @@ export type VariablesRecordatorio = {
 
 const CONFIRMACION = "¿Podría ayudarnos confirmando su asistencia? Responda SI o NO.";
 
+/**
+ * Meta rechaza las plantillas que empiezan o terminan con una variable, asi que la
+ * firma va al principio ("le escribimos de X") y el mensaje cierra con texto fijo.
+ * De paso se lee mejor: el paciente sabe quien le escribe en la primera linea, que
+ * importa cuando el mensaje llega de un numero que no tiene agendado.
+ */
 export function armarRecordatorio(tipo: TipoTurno, v: VariablesRecordatorio): string {
-  const lineas =
+  const lineas = [
+    `Hola ${v.paciente}, le escribimos de ${v.firma}.`,
+    "",
     tipo === "entrega"
-      ? [
-          `Hola ${v.paciente}, le recordamos su turno para la entrega de sus plantillas el ${v.fecha} a las ${v.hora} en ${v.direccion}.`,
-          "",
-          "Por favor traiga el calzado que usa habitualmente, así las probamos en el momento.",
-          "",
-          CONFIRMACION,
-        ]
-      : [
-          `Hola ${v.paciente}, le recordamos su turno el ${v.fecha} a las ${v.hora} en ${v.direccion}.`,
-          "",
-          CONFIRMACION,
-        ];
+      ? `Le recordamos su turno para la entrega de sus plantillas el ${v.fecha} a las ${v.hora} en ${v.direccion}.`
+      : `Le recordamos su turno el ${v.fecha} a las ${v.hora} en ${v.direccion}.`,
+  ];
 
-  return [...lineas, "", "Gracias,", v.firma].join("\n");
+  if (tipo === "entrega") {
+    lineas.push("", "Por favor traiga el calzado que usa habitualmente, así las probamos en el momento.");
+  }
+
+  lineas.push("", CONFIRMACION, "", "¡Muchas gracias!");
+  return lineas.join("\n");
 }
 
 /**
