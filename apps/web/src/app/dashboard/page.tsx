@@ -23,8 +23,28 @@ function esMasReciente(a: PlantillaRecencia, b: PlantillaRecencia) {
   return a.created_at > b.created_at;
 }
 
-export default async function DashboardPage() {
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+/** "2026-09" -> "Septiembre 2026". Mismo formato que el calendario de turnos. */
+function etiquetaDeMes(mes: string): string {
+  const [y, m] = mes.split("-").map(Number);
+  return `${MESES[m - 1]} ${y}`;
+}
+
+/** Corre un mes hacia adelante o atras sobre "YYYY-MM". */
+function correrMes(mes: string, delta: number): string {
+  const [y, m] = mes.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + delta, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mes?: string }>;
+}) {
   const supabase = await createClient();
+  const { mes: mesParam } = await searchParams;
 
   const ahora = new Date();
   // En hora argentina: con la fecha UTC, despues de las 21:00 locales el sistema ya
@@ -46,11 +66,18 @@ export default async function DashboardPage() {
   // Altas del mes: created_at es timestamptz, asi que el corte va con el offset
   // argentino para que una plantilla cargada a las 22:00 del 31 no caiga en el mes
   // siguiente.
-  const inicioDeMes = `${hoy.slice(0, 7)}-01T00:00:00-03:00`;
+  const mesActual = hoy.slice(0, 7);
+  // Se ignora un ?mes= con formato invalido en vez de romper la pantalla.
+  const mesSeleccionado = /^\d{4}-\d{2}$/.test(mesParam ?? "") ? mesParam! : mesActual;
+  const esMesActual = mesSeleccionado === mesActual;
+
+  const inicioDeMes = `${mesSeleccionado}-01T00:00:00-03:00`;
+  const finDeMes = `${correrMes(mesSeleccionado, 1)}-01T00:00:00-03:00`;
   const { data: altas } = await supabase
     .from("plantillas")
     .select("id, es_renovacion, pacientes(consultorios(nombre))")
-    .gte("created_at", inicioDeMes);
+    .gte("created_at", inicioDeMes)
+    .lt("created_at", finDeMes);
 
   const conteo = new Map<string, number>();
   for (const a of (altas ?? []) as unknown as {
@@ -101,14 +128,6 @@ export default async function DashboardPage() {
     (p) => (p.fecha_renovacion as string | null) !== null && (p.fecha_renovacion as string) <= hoy
   ).length;
 
-  // Solo la primera letra: la clase capitalize de Tailwind convierte cada palabra
-  // y deja "Septiembre De 2026".
-  const mesCrudo = new Date(hoy + "T00:00:00").toLocaleDateString("es-AR", {
-    month: "long",
-    year: "numeric",
-  });
-  const mes = mesCrudo.charAt(0).toUpperCase() + mesCrudo.slice(1);
-
   const renovacionesDelMes = (altas ?? []).filter(
     (a) => (a as { es_renovacion?: boolean | null }).es_renovacion
   ).length;
@@ -121,7 +140,10 @@ export default async function DashboardPage() {
       </div>
 
       <ResumenDelMes
-        mes={mes}
+        mes={etiquetaDeMes(mesSeleccionado)}
+        mesAnterior={correrMes(mesSeleccionado, -1)}
+        mesSiguiente={esMesActual ? null : correrMes(mesSeleccionado, 1)}
+        esMesActual={esMesActual}
         altasDelMes={(altas ?? []).length}
         renovacionesDelMes={renovacionesDelMes}
         porConsultorio={porConsultorio}

@@ -16,6 +16,10 @@ export interface AltaPorConsultorio {
 
 interface Props {
   mes: string;
+  mesAnterior: string;
+  /** null cuando ya estamos en el mes actual: no se navega al futuro. */
+  mesSiguiente: string | null;
+  esMesActual: boolean;
   altasDelMes: number;
   renovacionesDelMes: number;
   porConsultorio: AltaPorConsultorio[];
@@ -45,6 +49,9 @@ function Tile({
 
 export default function ResumenDelMes({
   mes,
+  mesAnterior,
+  mesSiguiente,
+  esMesActual,
   altasDelMes,
   renovacionesDelMes,
   porConsultorio,
@@ -58,12 +65,43 @@ export default function ResumenDelMes({
 
   return (
     <section className="mb-8">
-      <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
         <h2 className="text-lg font-semibold text-gray-900">Resumen del mes</h2>
-        <span className="text-sm text-gray-500">{mes}</span>
+        {/* La navegacion cambia solo este bloque: los turnos de hoy y las
+            renovaciones de mas abajo siempre son del presente. */}
+        <div className="flex items-center gap-1">
+          <Link
+            href={`/dashboard?mes=${mesAnterior}`}
+            aria-label="Mes anterior"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-xl transition-colors"
+          >
+            ‹
+          </Link>
+          <span className="text-sm font-medium text-gray-700 min-w-[8.5rem] text-center">
+            {mes}
+          </span>
+          {mesSiguiente ? (
+            <Link
+              href={`/dashboard?mes=${mesSiguiente}`}
+              aria-label="Mes siguiente"
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-xl transition-colors"
+            >
+              ›
+            </Link>
+          ) : (
+            <span
+              aria-hidden="true"
+              className="w-8 h-8 flex items-center justify-center text-gray-200 text-xl cursor-default"
+            >
+              ›
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      <div
+        className={`grid grid-cols-2 gap-3 mb-4 ${esMesActual ? "lg:grid-cols-4" : "lg:grid-cols-2"}`}
+      >
         <Tile
           valor={altasDelMes}
           etiqueta="Plantillas dadas de alta"
@@ -77,31 +115,35 @@ export default function ResumenDelMes({
         <Tile
           valor={top?.nombre ?? "—"}
           etiqueta="Consultorio con más altas"
-          detalle={top ? `${top.altas} de ${altasDelMes}` : "sin altas este mes"}
+          detalle={top ? `${top.altas} de ${altasDelMes}` : "sin altas"}
         />
-        <Tile
-          valor={turnosSinConfirmar}
-          etiqueta="Turnos de hoy sin confirmar"
-          detalle={turnosSinConfirmar > 0 ? "conviene llamarlos" : "todo confirmado"}
-          className={turnosSinConfirmar > 0 ? "text-amber-700" : "text-gray-900"}
-        />
-        <Tile
-          valor={renovacionesVencidas}
-          etiqueta="Renovaciones vencidas"
-          detalle={renovacionesVencidas > 0 ? "esperando contacto" : "al día"}
-          className={renovacionesVencidas > 0 ? "text-red-700" : "text-gray-900"}
-        />
+        {esMesActual && (
+          <>
+            <Tile
+              valor={turnosSinConfirmar}
+              etiqueta="Turnos de hoy sin confirmar"
+              detalle={turnosSinConfirmar > 0 ? "conviene llamarlos" : "todo confirmado"}
+              className={turnosSinConfirmar > 0 ? "text-amber-700" : "text-gray-900"}
+            />
+            <Tile
+              valor={renovacionesVencidas}
+              etiqueta="Renovaciones vencidas"
+              detalle={renovacionesVencidas > 0 ? "esperando contacto" : "al día"}
+              className={renovacionesVencidas > 0 ? "text-red-700" : "text-gray-900"}
+            />
+          </>
+        )}
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h3 className="text-sm font-semibold text-gray-900">Altas por consultorio</h3>
         <p className="text-xs text-gray-500 mt-0.5 mb-4">
-          Plantillas dadas de alta este mes, según el consultorio del paciente.
+          Plantillas dadas de alta en {mes}, según el consultorio del paciente.
         </p>
 
         {porConsultorio.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-8">
-            Todavía no hay altas este mes.
+            No hubo altas en {mes}.
           </p>
         ) : (
           <div className="space-y-2">
