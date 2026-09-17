@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import SeguimientoGrid from "./SeguimientoGrid";
 import TurnosDelDia from "./TurnosDelDia";
+import ResumenDelMes from "./ResumenDelMes";
 import { fechaEnArgentina } from "@/lib/recordatorios";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,27 @@ export default async function DashboardPage() {
     .eq("fecha", hoy)
     .order("hora", { ascending: true });
 
+  // Altas del mes: created_at es timestamptz, asi que el corte va con el offset
+  // argentino para que una plantilla cargada a las 22:00 del 31 no caiga en el mes
+  // siguiente.
+  const inicioDeMes = `${hoy.slice(0, 7)}-01T00:00:00-03:00`;
+  const { data: altas } = await supabase
+    .from("plantillas")
+    .select("id, es_renovacion, pacientes(consultorios(nombre))")
+    .gte("created_at", inicioDeMes);
+
+  const conteo = new Map<string, number>();
+  for (const a of (altas ?? []) as unknown as {
+    es_renovacion: boolean | null;
+    pacientes: { consultorios: { nombre: string } | null } | null;
+  }[]) {
+    const nombre = a.pacientes?.consultorios?.nombre?.trim() || "Sin consultorio";
+    conteo.set(nombre, (conteo.get(nombre) ?? 0) + 1);
+  }
+  const porConsultorio = [...conteo.entries()]
+    .map(([nombre, altas]) => ({ nombre, altas }))
+    .sort((a, b) => b.altas - a.altas || a.nombre.localeCompare(b.nombre));
+
   const { data: candidatas } = await supabase
     .from("plantillas")
     .select("*, pacientes(id, nombre, celular, consultorios(nombre))")
@@ -72,17 +94,42 @@ export default async function DashboardPage() {
     );
   }
 
+  const turnos = (turnosHoy ?? []) as unknown as Parameters<typeof TurnosDelDia>[0]["turnos"];
+  const turnosSinConfirmar = turnos.filter((t) => t.estado === "pendiente").length;
+  // Vencida = su fecha de renovacion ya paso; las proximas a vencer no cuentan acá.
+  const renovacionesVencidas = porContactar.filter(
+    (p) => (p.fecha_renovacion as string | null) !== null && (p.fecha_renovacion as string) <= hoy
+  ).length;
+
+  // Solo la primera letra: la clase capitalize de Tailwind convierte cada palabra
+  // y deja "Septiembre De 2026".
+  const mesCrudo = new Date(hoy + "T00:00:00").toLocaleDateString("es-AR", {
+    month: "long",
+    year: "numeric",
+  });
+  const mes = mesCrudo.charAt(0).toUpperCase() + mesCrudo.slice(1);
+
+  const renovacionesDelMes = (altas ?? []).filter(
+    (a) => (a as { es_renovacion?: boolean | null }).es_renovacion
+  ).length;
+
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Seguimiento</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Turnos de hoy y renovaciones pendientes</p>
+        <p className="text-sm text-gray-500 mt-0.5">Cómo viene el mes, los turnos de hoy y las renovaciones pendientes</p>
       </div>
 
-      <TurnosDelDia
-        turnos={(turnosHoy ?? []) as unknown as Parameters<typeof TurnosDelDia>[0]["turnos"]}
-        hoy={hoy}
+      <ResumenDelMes
+        mes={mes}
+        altasDelMes={(altas ?? []).length}
+        renovacionesDelMes={renovacionesDelMes}
+        porConsultorio={porConsultorio}
+        turnosSinConfirmar={turnosSinConfirmar}
+        renovacionesVencidas={renovacionesVencidas}
       />
+
+      <TurnosDelDia turnos={turnos} hoy={hoy} />
 
       <h2 className="text-lg font-semibold text-gray-900 mb-3">Renovaciones</h2>
       <SeguimientoGrid plantillas={porContactar as Parameters<typeof SeguimientoGrid>[0]["plantillas"]} hoy={hoy} />
