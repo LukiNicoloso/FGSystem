@@ -17,6 +17,7 @@ export interface TurnoDelDia {
   estado: string;
   respuesta_paciente: string | null;
   recordatorio_enviado: boolean;
+  recordatorio_error: string | null;
   pacientes: { id: string; nombre: string } | null;
   consultorios: { nombre: string } | null;
 }

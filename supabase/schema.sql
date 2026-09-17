@@ -51,6 +51,12 @@ CREATE TABLE turnos (
   tipo TEXT NOT NULL DEFAULT 'estudio' CHECK (tipo = ANY (ARRAY['estudio', 'entrega'])),
   recordatorio_enviado BOOLEAN DEFAULT FALSE,
   recordatorio_enviado_at TIMESTAMPTZ,
+  -- Seguimiento de la entrega del recordatorio. Twilio acepta el mensaje y recien
+  -- despues WhatsApp lo entrega o lo rechaza: sin esto, uno que nunca llego
+  -- quedaba marcado como enviado y nadie se enteraba.
+  recordatorio_sid TEXT,
+  recordatorio_estado TEXT,
+  recordatorio_error TEXT,
   -- Que contesto el paciente al recordatorio. Distingue una cancelacion pedida por
   -- el paciente de una que hizo el consultorio a mano.
   respuesta_paciente TEXT CHECK (respuesta_paciente = ANY (ARRAY['si', 'no'])),
