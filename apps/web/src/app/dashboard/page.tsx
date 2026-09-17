@@ -57,7 +57,7 @@ export default async function DashboardPage({
   const { data: turnosHoy } = await supabase
     .from("turnos")
     .select(
-      "id, hora, tipo, estado, respuesta_paciente, recordatorio_enviado, " +
+      "id, hora, tipo, estado, respuesta_paciente, recordatorio_enviado, recordatorio_error, " +
         "pacientes(id, nombre), consultorios(nombre)"
     )
     .eq("fecha", hoy)

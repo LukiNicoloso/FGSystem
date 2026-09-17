@@ -160,7 +160,14 @@ export async function enviarRecordatorios(
       // se reintenta en vez de perderse.
       const { error: marcarError } = await supabase
         .from("turnos")
-        .update({ recordatorio_enviado: true, recordatorio_enviado_at: new Date().toISOString() })
+        .update({
+          recordatorio_enviado: true,
+          recordatorio_enviado_at: new Date().toISOString(),
+          // El sid es lo que permite cruzar despues el aviso de entrega de Twilio.
+          recordatorio_sid: envio.sid,
+          recordatorio_estado: "sent",
+          recordatorio_error: null,
+        })
         .eq("id", t.id);
       if (marcarError) throw new Error(`enviado pero no se pudo marcar: ${marcarError.message}`);
 

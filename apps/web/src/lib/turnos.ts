@@ -20,6 +20,8 @@ export type TurnoParaEstado = {
   estado: string;
   respuesta_paciente?: string | null;
   recordatorio_enviado?: boolean | null;
+  /** Codigo de error de Twilio cuando el recordatorio no se pudo entregar. */
+  recordatorio_error?: string | null;
 };
 
 const SIN_DATO: EstadoVisual = {
@@ -44,6 +46,15 @@ export function estadoVisualDeTurno(t: TurnoParaEstado): EstadoVisual {
       return { label: "Completado", className: "bg-blue-100 text-blue-700", requiereAtencion: false };
 
     case "pendiente":
+      // Un recordatorio que no se entrego es distinto de uno sin responder: el
+      // paciente ni siquiera se entero, asi que hay que llamarlo si o si.
+      if (t.recordatorio_error) {
+        return {
+          label: "No se pudo avisar",
+          className: "bg-red-100 text-red-700",
+          requiereAtencion: true,
+        };
+      }
       return t.recordatorio_enviado
         ? { label: "Sin responder", className: "bg-amber-100 text-amber-800", requiereAtencion: true }
         : { label: "Pendiente confirmación", className: "bg-yellow-100 text-yellow-700", requiereAtencion: false };

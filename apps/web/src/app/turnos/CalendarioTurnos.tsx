@@ -18,6 +18,7 @@ interface Turno {
   estado: string;
   tipo: string;
   respuesta_paciente: string | null;
+  recordatorio_error: string | null;
   recordatorio_enviado: boolean;
   pacientes: Paciente | null;
   consultorios: Consultorio | null;
