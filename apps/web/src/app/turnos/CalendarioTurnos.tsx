@@ -57,6 +57,9 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
   const [fechaPre, setFechaPre] = useState("");
   const [horaPre, setHoraPre] = useState("");
   const [eliminando, setEliminando] = useState<string | null>(null);
+  // Se confirma dentro de la tarjeta y no con un confirm() del navegador: en el
+  // celular ese dialogo es inconsistente y ademas no se puede tocar comodo.
+  const [confirmando, setConfirmando] = useState<string | null>(null);
 
   const [year, month] = mesStr.split("-").map(Number);
   const hoy = new Date();
@@ -110,19 +113,37 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
   }
 
   async function handleEliminar(id: string) {
-    if (!confirm("¿Eliminar este turno?")) return;
     setEliminando(id);
     await eliminarTurno(id);
     setEliminando(null);
+    setConfirmando(null);
   }
 
-  // Turnos del día seleccionado por slot
-  const turnosPorSlot: Record<string, Turno> = {};
-  if (diaSeleccionado) {
-    for (const t of turnosPorDia[diaSeleccionado] ?? []) {
-      turnosPorSlot[t.hora.slice(0, 5)] = t;
-    }
-  }
+  // Las filas del panel del dia: los turnos reales en su horario exacto, mas los
+  // bloques vacios para agendar.
+  //
+  // Antes esto era un diccionario de bloque -> turno, asi que un turno a las 08:10
+  // no coincidia con ningun bloque de 30 minutos y no se dibujaba nunca: quedaba
+  // invisible aunque estuviera cargado. Dos turnos en el mismo horario tambien se
+  // pisaban entre si.
+  type FilaDelDia = { hora: string; turno?: Turno };
+
+  const turnosDelDia = [...(diaSeleccionado ? turnosPorDia[diaSeleccionado] ?? [] : [])].sort(
+    (a, b) => a.hora.localeCompare(b.hora)
+  );
+  const horasOcupadas = new Set(turnosDelDia.map((t) => t.hora.slice(0, 5)));
+
+  const filasDelDia: FilaDelDia[] = [
+    ...turnosDelDia.map((t): FilaDelDia => ({ hora: t.hora.slice(0, 5), turno: t })),
+    ...SLOTS.filter((s) => !horasOcupadas.has(s)).map((hora): FilaDelDia => ({ hora })),
+  ].sort((a, b) => {
+    const porHora = a.hora.localeCompare(b.hora);
+    if (porHora !== 0) return porHora;
+    // A igual hora, el turno antes que el bloque vacio. Entre dos turnos devolvemos
+    // 0 para que el orden estable del sort anterior los deje como vinieron.
+    if (Boolean(a.turno) === Boolean(b.turno)) return 0;
+    return a.turno ? -1 : 1;
+  });
 
   const labelDiaSeleccionado = diaSeleccionado
     ? new Date(diaSeleccionado + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })
@@ -243,13 +264,12 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
             </div>
 
             <div className="overflow-y-auto flex-1 px-3 py-2 space-y-1">
-              {SLOTS.map((slot) => {
-                const turno = turnosPorSlot[slot];
+              {filasDelDia.map(({ hora: slot, turno }) => {
                 const ci = turno?.consultorio_id ? (colorMap[turno.consultorio_id] ?? 0) : 0;
                 const color = COLORES[ci];
 
                 return (
-                  <div key={slot} className="flex items-start gap-2">
+                  <div key={turno ? turno.id : `vacio-${slot}`} className="flex items-start gap-2">
                     <span className="text-xs text-gray-400 w-10 pt-2 shrink-0 font-mono">{slot}</span>
                     {turno ? (
                       <div className={`flex-1 rounded-lg px-3 py-2 border ${color.light} ${color.border}`}>
@@ -266,15 +286,33 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
                               {estadoVisualDeTurno(turno).label}
                             </span>
                           </div>
-                          <div className="flex gap-2 shrink-0 pt-0.5">
-                            <button onClick={() => handleEditar(turno)}
-                              className="text-xs text-blue-600 hover:underline">Editar</button>
-                            <button onClick={() => handleEliminar(turno.id)}
-                              disabled={eliminando === turno.id}
-                              className="text-xs text-red-500 hover:underline disabled:opacity-50">
-                              {eliminando === turno.id ? "..." : "✕"}
-                            </button>
-                          </div>
+                          {confirmando === turno.id ? (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="text-xs text-gray-600">¿Eliminar?</span>
+                              <button onClick={() => handleEliminar(turno.id)}
+                                disabled={eliminando === turno.id}
+                                className="px-2.5 py-1.5 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50">
+                                {eliminando === turno.id ? "..." : "Sí"}
+                              </button>
+                              <button onClick={() => setConfirmando(null)}
+                                disabled={eliminando === turno.id}
+                                className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                No
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-1 shrink-0">
+                              <button onClick={() => handleEditar(turno)}
+                                className="px-2.5 py-1.5 text-xs font-medium text-blue-700 rounded-md hover:bg-white/70">
+                                Editar
+                              </button>
+                              <button onClick={() => setConfirmando(turno.id)}
+                                aria-label="Eliminar turno"
+                                className="px-2.5 py-1.5 text-xs font-medium text-red-600 rounded-md hover:bg-white/70">
+                                Eliminar
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : (
