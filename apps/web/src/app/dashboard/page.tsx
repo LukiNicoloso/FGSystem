@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import SeguimientoGrid from "./SeguimientoGrid";
+import TurnosDelDia from "./TurnosDelDia";
+import { fechaEnArgentina } from "@/lib/recordatorios";
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +26,21 @@ export default async function DashboardPage() {
   const supabase = await createClient();
 
   const ahora = new Date();
-  const hoy = ahora.toISOString().split("T")[0];
-  const limite = new Date(ahora);
-  limite.setDate(limite.getDate() + DIAS_AVISO);
+  // En hora argentina: con la fecha UTC, despues de las 21:00 locales el sistema ya
+  // consideraba que era el dia siguiente y mostraba los turnos equivocados.
+  const hoy = fechaEnArgentina(ahora);
+  const limite = new Date(hoy + "T00:00:00Z");
+  limite.setUTCDate(limite.getUTCDate() + DIAS_AVISO);
   const limiteStr = limite.toISOString().split("T")[0];
+
+  const { data: turnosHoy } = await supabase
+    .from("turnos")
+    .select(
+      "id, hora, tipo, estado, respuesta_paciente, recordatorio_enviado, " +
+        "pacientes(id, nombre), consultorios(nombre)"
+    )
+    .eq("fecha", hoy)
+    .order("hora", { ascending: true });
 
   const { data: candidatas } = await supabase
     .from("plantillas")
@@ -63,8 +76,15 @@ export default async function DashboardPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Seguimiento</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Seguimiento de renovaciones</p>
+        <p className="text-sm text-gray-500 mt-0.5">Turnos de hoy y renovaciones pendientes</p>
       </div>
+
+      <TurnosDelDia
+        turnos={(turnosHoy ?? []) as unknown as Parameters<typeof TurnosDelDia>[0]["turnos"]}
+        hoy={hoy}
+      />
+
+      <h2 className="text-lg font-semibold text-gray-900 mb-3">Renovaciones</h2>
       <SeguimientoGrid plantillas={porContactar as Parameters<typeof SeguimientoGrid>[0]["plantillas"]} hoy={hoy} />
     </div>
   );
