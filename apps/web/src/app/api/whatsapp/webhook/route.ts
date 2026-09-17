@@ -1,7 +1,7 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { configuracionTwilio, enviarWhatsapp } from "@/lib/twilio";
 import { interpretarRespuesta, ACUSE } from "@/lib/respuesta-turno";
+import { firmaValida, urlPublica, camposDelForm } from "@/lib/twilio-firma";
 import {
   formatearFechaTurno,
   formatearHoraTurno,
@@ -31,23 +31,6 @@ function respuestaVacia() {
   });
 }
 
-/**
- * Twilio firma la URL completa mas los campos del form ordenados alfabeticamente,
- * con HMAC-SHA1 y el auth token como clave.
- */
-function firmaValida(url: string, campos: Record<string, string>, firma: string, token: string) {
-  const base =
-    url +
-    Object.keys(campos)
-      .sort()
-      .map((k) => k + campos[k])
-      .join("");
-  const esperada = createHmac("sha1", token).update(Buffer.from(base, "utf8")).digest("base64");
-  const a = Buffer.from(esperada);
-  const b = Buffer.from(firma);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
-
 export async function POST(request: Request) {
   // Sin credenciales no hay con que verificar la firma, asi que no se procesa nada.
   // Devolvemos 503 y no 200: un 200 a un request sin firmar da a entender que el
@@ -58,15 +41,9 @@ export async function POST(request: Request) {
     return new Response("Webhook no configurado", { status: 503 });
   }
 
-  const form = await request.formData();
-  const campos: Record<string, string> = {};
-  for (const [k, v] of form.entries()) campos[k] = String(v);
-
+  const campos = await camposDelForm(request);
   const firma = request.headers.get("x-twilio-signature") ?? "";
-  // Twilio firma la URL publica; detras del proxy de Vercel hay que reconstruirla.
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  const url = `https://${host}${new URL(request.url).pathname}`;
-  if (!firmaValida(url, campos, firma, config.authToken)) {
+  if (!firmaValida(urlPublica(request), campos, firma, config.authToken)) {
     console.error("[webhook] firma inválida, se descarta el mensaje");
     return new Response("Firma inválida", { status: 403 });
   }
