@@ -49,7 +49,8 @@ export async function GET(request: Request) {
     }
     console.log(
       `[recordatorios ${r.fecha}]${r.simulacion ? " SIMULACION" : ""} ` +
-        `enviados: ${r.enviados.length}, salteados: ${r.salteados.length}, fallidos: ${r.fallidos.length}`
+        `enviados: ${r.enviados.length}, salteados: ${r.salteados.length}, ` +
+        `fallidos: ${r.fallidos.length}, resumen a FG: ${r.resumenEnviado}`
     );
     for (const f of r.fallidos) {
       console.error(`[recordatorios] falló ${f.paciente} (turno ${f.turnoId}): ${f.error}`);
