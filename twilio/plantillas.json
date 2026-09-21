@@ -6,6 +6,9 @@
     "",
     "Variables: {{1}} paciente, {{2}} fecha, {{3}} hora, {{4}} direccion, {{5}} firma.",
     "En el aviso de rechazo: {{1}} paciente, {{2}} fecha, {{3}} hora, {{4}} consultorio.",
+    "En el resumen de fallos: {{1}} total de turnos, {{2}} fecha, {{3}} cuantos",
+    "quedaron sin avisar, {{4}} el detalle. Las variables no pueden llevar saltos de",
+    "linea, por eso el detalle va en una sola linea separado por '·'.",
     "",
     "Meta rechaza plantillas que empiezan o terminan con una variable, y las que",
     "tienen muchas variables para su largo. Por eso la firma va al principio y el",
@@ -84,6 +87,21 @@
     "types": {
       "twilio/text": {
         "body": "Aviso de FGSystem: el paciente {{1}} rechazó su turno del {{2}} a las {{3}} en el consultorio {{4}}. Conviene contactarlo para reprogramar."
+      }
+    }
+  },
+  "resumen_fallos": {
+    "friendly_name": "fg_resumen_fallos",
+    "language": "es",
+    "variables": {
+      "1": "7",
+      "2": "lunes 21 de septiembre",
+      "3": "2",
+      "4": "Juan Pérez +5491134113178 (11:00, Kinest) el consultorio no tiene el recordatorio activo · María López +5491131096959 (15:30, Mariana) no se pudo entregar el mensaje"
+    },
+    "types": {
+      "twilio/text": {
+        "body": "Aviso de FGSystem: de los {{1}} turnos del {{2}}, no se pudo avisar a {{3}}. Detalle: {{4}}. Conviene contactarlos por teléfono para confirmar la asistencia."
       }
     }
   }

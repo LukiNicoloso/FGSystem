@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
-import { configuracionTwilio, enviarWhatsapp } from "@/lib/twilio";
+import { configuracionTwilio, enviarWhatsapp, type ConfigTwilio } from "@/lib/twilio";
+import {
+  armarResumenDeFallos,
+  variablesDelResumen,
+  textoDelResumen,
+  type FalloDeAviso,
+} from "@/lib/resumen-fallos";
 import {
   armarRecordatorio,
   formatearFechaTurno,
@@ -8,6 +14,7 @@ import {
   fechaDeManana,
   contentSidDe,
   variablesDeRecordatorio,
+  TELEFONO_AVISOS_FG,
   type TipoTurno,
 } from "@/lib/recordatorios";
 
@@ -39,6 +46,8 @@ export type ResultadoEnvio = {
   }[];
   salteados: { turnoId: string; paciente: string; motivo: MotivoSalteo }[];
   fallidos: { turnoId: string; paciente: string; error: string }[];
+  /** Cuantos mensajes de resumen salieron a FG. 0 si no hubo nada que avisar. */
+  resumenEnviado: number;
 };
 
 type TurnoConDatos = {
@@ -90,7 +99,12 @@ export async function enviarRecordatorios(
     enviados: [],
     salteados: [],
     fallidos: [],
+    resumenEnviado: 0,
   };
+
+  // Lo que quedo sin avisar, para el resumen de la noche. Al paciente le da igual
+  // si el mensaje se rechazo o si nunca se intento: en los dos casos no se entero.
+  const sinAvisar: FalloDeAviso[] = [];
 
   for (const t of (data ?? []) as unknown as TurnoConDatos[]) {
     const paciente = t.pacientes?.nombre ?? "(sin paciente)";
@@ -98,6 +112,13 @@ export async function enviarRecordatorios(
 
     if (!consultorio) {
       resultado.salteados.push({ turnoId: t.id, paciente, motivo: "sin consultorio" });
+      sinAvisar.push({
+        paciente,
+        celular: t.pacientes?.celular_e164 ?? null,
+        hora: t.hora,
+        consultorio: null,
+        motivo: "el turno no tiene consultorio asignado",
+      });
       continue;
     }
 
@@ -112,6 +133,13 @@ export async function enviarRecordatorios(
         paciente,
         motivo: "consultorio sin recordatorio para este tipo",
       });
+      sinAvisar.push({
+        paciente,
+        celular: t.pacientes?.celular_e164 ?? null,
+        hora: t.hora,
+        consultorio: consultorio.nombre,
+        motivo: "el consultorio no tiene este recordatorio activo",
+      });
       continue;
     }
 
@@ -120,6 +148,13 @@ export async function enviarRecordatorios(
     const celular = t.pacientes?.celular_e164;
     if (!celular) {
       resultado.salteados.push({ turnoId: t.id, paciente, motivo: "sin celular utilizable" });
+      sinAvisar.push({
+        paciente,
+        celular: null,
+        hora: t.hora,
+        consultorio: consultorio.nombre,
+        motivo: "su celular no está cargado en formato válido",
+      });
       continue;
     }
 
@@ -185,8 +220,60 @@ export async function enviarRecordatorios(
         paciente,
         error: err instanceof Error ? err.message : "error desconocido",
       });
+      sinAvisar.push({
+        paciente,
+        celular,
+        hora: t.hora,
+        consultorio: consultorio.nombre,
+        motivo: "no se pudo entregar el mensaje",
+      });
     }
   }
 
+  if (config && !simulacion && sinAvisar.length > 0) {
+    resultado.resumenEnviado = await avisarFallos(
+      config,
+      fecha,
+      (data ?? []).length,
+      sinAvisar
+    );
+  }
+
   return resultado;
+}
+
+/**
+ * Manda a FG el resumen de lo que quedo sin avisar. Va solo a FG y no a cada
+ * consultorio: el resumen mezcla turnos de varios, y filtrarlo por consultorio
+ * significaria contarle a uno los problemas del otro.
+ */
+async function avisarFallos(
+  config: ConfigTwilio,
+  fecha: string,
+  totalTurnos: number,
+  fallos: FalloDeAviso[]
+): Promise<number> {
+  const contentSid = process.env.TWILIO_CONTENT_SID_RESUMEN_FALLOS;
+  const mensajes = armarResumenDeFallos(fecha, totalTurnos, fallos);
+  let enviados = 0;
+
+  for (const m of mensajes) {
+    try {
+      await enviarWhatsapp(config, {
+        para: TELEFONO_AVISOS_FG,
+        cuerpo: textoDelResumen(m),
+        contentSid,
+        variables: contentSid ? variablesDelResumen(m) : undefined,
+      });
+      enviados++;
+    } catch (err) {
+      // Que falle el resumen no puede tapar el resultado del envio, que es lo que
+      // de verdad importa.
+      console.error(
+        "[recordatorios] no se pudo mandar el resumen de fallos:",
+        err instanceof Error ? err.message : err
+      );
+    }
+  }
+  return enviados;
 }
