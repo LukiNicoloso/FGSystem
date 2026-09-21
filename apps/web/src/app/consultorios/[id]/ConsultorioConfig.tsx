@@ -146,7 +146,7 @@ export default function ConsultorioConfig({ consultorio }: Props) {
       <section className="bg-white rounded-xl border border-gray-200 p-5">
         <h2 className="text-base font-semibold text-gray-900">Recordatorios de turno</h2>
         <p className="text-sm text-gray-500 mt-0.5 mb-4">
-          Se envían por WhatsApp a las 18:00 del día anterior al turno. Cada tipo de turno
+          Se envían por WhatsApp a las 15:00 del día anterior al turno. Cada tipo de turno
           se activa por separado.
         </p>
 

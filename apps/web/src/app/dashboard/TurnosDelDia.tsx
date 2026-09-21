@@ -5,7 +5,7 @@ import { estadoVisualDeTurno } from "@/lib/turnos";
 /**
  * Los turnos de hoy y como viene la confirmacion de cada uno.
  *
- * Es la vista de la mañana: los recordatorios salieron ayer a las 18:00, asi que
+ * Es la vista de la mañana: los recordatorios salieron ayer a las 15:00, asi que
  * al abrir el sistema lo primero que importa es quien confirmo, quien rechazo y a
  * quien hay que llamar porque no contesto.
  */
