@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { enviarRecordatorios } from "@/lib/envio-recordatorios";
 
 /**
- * Cron diario de recordatorios. Vercel lo invoca a las 21:00 UTC, que son las
- * 18:00 en Argentina todo el año porque el pais no aplica horario de verano.
+ * Cron diario de recordatorios. Vercel lo invoca a las 18:00 UTC, que son las
+ * 15:00 en Argentina todo el año porque el pais no aplica horario de verano.
+ *
+ * Sale a la tarde y no al final del dia a proposito: el resumen de lo que no se
+ * pudo avisar llega con tarde habil por delante, cuando todavia se puede llamar a
+ * esos pacientes.
  *
  * Esta ruta queda fuera de la autenticacion de proxy.ts (Vercel no manda cookies
  * de sesion), asi que se protege sola con CRON_SECRET. Vercel lo envia como
