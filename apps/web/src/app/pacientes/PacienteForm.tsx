@@ -162,7 +162,8 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
                 />
               </div>
 
-              <CamposDeCobro precioPorPar={precioPorPar} />
+              {/* La primera plantilla de un paciente nuevo suele ser de un solo par. */}
+              <CamposDeCobro precioPorPar={precioPorPar} paresPorDefecto={1} />
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Fotos de la pisada</label>

@@ -30,6 +30,12 @@ interface Props {
    * plantilla vieja que nunca tuvo el dato.
    */
   editando?: boolean;
+  /**
+   * Con que cantidad arranca un alta nueva. No es la misma en los dos formularios:
+   * un alta suelta suele ser de dos pares, pero la primera plantilla de un paciente
+   * nuevo suele ser de uno.
+   */
+  paresPorDefecto?: Pares;
 }
 
 export default function CamposDeCobro({
@@ -37,13 +43,14 @@ export default function CamposDeCobro({
   paresIniciales,
   montoInicial,
   editando = false,
+  paresPorDefecto = PARES_POR_DEFECTO,
 }: Props) {
   const [pares, setPares] = useState<Pares | null>(
     paresIniciales === 1 || paresIniciales === 2
       ? paresIniciales
       : editando
         ? null
-        : PARES_POR_DEFECTO
+        : paresPorDefecto
   );
   const [monto, setMonto] = useState(montoInicial != null ? String(montoInicial) : "");
   // Una vez escrito a mano dejamos de pisarlo: el precio del consultorio es una
