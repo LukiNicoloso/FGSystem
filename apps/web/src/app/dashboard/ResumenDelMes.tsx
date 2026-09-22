@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { formatearPesos } from "@/lib/precios";
 
 /**
  * El pulso del mes, arriba de todo.
@@ -25,6 +27,11 @@ interface Props {
   porConsultorio: AltaPorConsultorio[];
   turnosSinConfirmar: number;
   renovacionesVencidas: number;
+  gananciaTotal: number;
+  /** Altas del mes sin monto cargado: el total las deja afuera y hay que decirlo. */
+  altasSinMonto: number;
+  /** El detalle por consultorio, que viaja armado desde la pagina. */
+  ganancias: ReactNode;
 }
 
 function Tile({
@@ -32,14 +39,17 @@ function Tile({
   etiqueta,
   detalle,
   className = "text-gray-900",
+  ancho = "",
 }: {
   valor: string | number;
   etiqueta: string;
   detalle?: string;
   className?: string;
+  /** Cuantas columnas ocupa. Por defecto una. */
+  ancho?: string;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
+    <div className={`bg-white rounded-xl border border-gray-200 p-4 ${ancho}`}>
       <p className="text-xs text-gray-500">{etiqueta}</p>
       <p className={`text-2xl font-bold mt-1 truncate ${className}`}>{valor}</p>
       <p className="text-xs text-gray-400 mt-0.5 h-4 truncate">{detalle ?? ""}</p>
@@ -57,6 +67,9 @@ export default function ResumenDelMes({
   porConsultorio,
   turnosSinConfirmar,
   renovacionesVencidas,
+  gananciaTotal,
+  altasSinMonto,
+  ganancias,
 }: Props) {
   const top = porConsultorio[0];
   // Las barras se miden contra el mayor, no contra el total: con un consultorio
@@ -100,8 +113,21 @@ export default function ResumenDelMes({
       </div>
 
       <div
-        className={`grid grid-cols-2 gap-3 mb-4 ${esMesActual ? "lg:grid-cols-4" : "lg:grid-cols-2"}`}
+        className={`grid grid-cols-2 gap-3 mb-4 ${esMesActual ? "lg:grid-cols-5" : "lg:grid-cols-3"}`}
       >
+        <Tile
+          valor={formatearPesos(gananciaTotal)}
+          etiqueta="Ganado en el mes"
+          // En telefono ocupa la fila entera: es el numero mas largo de los cinco
+          // y en media columna se cortaria apenas pase el millon.
+          ancho="col-span-2 lg:col-span-1"
+          detalle={
+            altasSinMonto === 0
+              ? "todas las altas con monto"
+              : `${altasSinMonto} ${altasSinMonto === 1 ? "alta" : "altas"} sin monto cargado`
+          }
+          className={altasSinMonto === 0 ? "text-emerald-700" : "text-emerald-700/60"}
+        />
         <Tile
           valor={altasDelMes}
           etiqueta="Plantillas dadas de alta"
@@ -135,6 +161,7 @@ export default function ResumenDelMes({
         )}
       </div>
 
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h3 className="text-sm font-semibold text-gray-900">Altas por consultorio</h3>
         <p className="text-xs text-gray-500 mt-0.5 mb-4">
@@ -176,6 +203,9 @@ export default function ResumenDelMes({
             Ver consultorios
           </Link>
         </p>
+      </div>
+
+      {ganancias}
       </div>
     </section>
   );
