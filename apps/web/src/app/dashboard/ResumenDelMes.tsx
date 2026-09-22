@@ -27,8 +27,11 @@ interface Props {
   porConsultorio: AltaPorConsultorio[];
   turnosSinConfirmar: number;
   renovacionesVencidas: number;
-  gananciaTotal: number;
-  /** Altas del mes sin monto cargado: el total las deja afuera y hay que decirlo. */
+  /** Lo que ya entro de las altas del mes. */
+  gananciaCobrada: number;
+  /** Lo que falta entrar: son las entregas mas recientes. */
+  gananciaPorCobrar: number;
+  /** Altas del mes sin monto cargado: las sumas las dejan afuera y hay que decirlo. */
   altasSinMonto: number;
   /** El detalle por consultorio, que viaja armado desde la pagina. */
   ganancias: ReactNode;
@@ -67,7 +70,8 @@ export default function ResumenDelMes({
   porConsultorio,
   turnosSinConfirmar,
   renovacionesVencidas,
-  gananciaTotal,
+  gananciaCobrada,
+  gananciaPorCobrar,
   altasSinMonto,
   ganancias,
 }: Props) {
@@ -116,17 +120,21 @@ export default function ResumenDelMes({
         className={`grid grid-cols-2 gap-3 mb-4 ${esMesActual ? "lg:grid-cols-5" : "lg:grid-cols-3"}`}
       >
         <Tile
-          valor={formatearPesos(gananciaTotal)}
-          etiqueta="Ganado en el mes"
+          valor={formatearPesos(gananciaCobrada)}
+          etiqueta="Cobrado del mes"
           // En telefono ocupa la fila entera: es el numero mas largo de los cinco
           // y en media columna se cortaria apenas pase el millon.
           ancho="col-span-2 lg:col-span-1"
+          // Lo pendiente va en el detalle y no en una tarjeta aparte: es el mismo
+          // dinero en dos momentos, no dos cosas distintas.
           detalle={
-            altasSinMonto === 0
-              ? "todas las altas con monto"
-              : `${altasSinMonto} ${altasSinMonto === 1 ? "alta" : "altas"} sin monto cargado`
+            gananciaPorCobrar > 0
+              ? `${formatearPesos(gananciaPorCobrar)} por cobrar`
+              : altasSinMonto > 0
+                ? `${altasSinMonto} ${altasSinMonto === 1 ? "alta" : "altas"} sin monto`
+                : "todo cobrado"
           }
-          className={altasSinMonto === 0 ? "text-emerald-700" : "text-emerald-700/60"}
+          className="text-emerald-700"
         />
         <Tile
           valor={altasDelMes}

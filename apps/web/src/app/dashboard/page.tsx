@@ -4,6 +4,7 @@ import TurnosDelDia from "./TurnosDelDia";
 import ResumenDelMes from "./ResumenDelMes";
 import GananciasDelMes, { type GananciaPorConsultorio } from "./GananciasDelMes";
 import { fechaEnArgentina } from "@/lib/recordatorios";
+import { yaSeCobro } from "@/lib/precios";
 
 export const dynamic = "force-dynamic";
 
@@ -76,7 +77,7 @@ export default async function DashboardPage({
   const finDeMes = `${correrMes(mesSeleccionado, 1)}-01T00:00:00-03:00`;
   const { data: altas } = await supabase
     .from("plantillas")
-    .select("id, es_renovacion, pares, monto_cobrado, pacientes(consultorios(nombre))")
+    .select("id, es_renovacion, pares, monto_cobrado, fecha_entrega, created_at, pacientes(consultorios(nombre))")
     .gte("created_at", inicioDeMes)
     .lt("created_at", finDeMes);
 
@@ -90,17 +91,29 @@ export default async function DashboardPage({
     es_renovacion: boolean | null;
     pares: number | null;
     monto_cobrado: number | null;
+    fecha_entrega: string | null;
+    created_at: string;
     pacientes: { consultorios: { nombre: string } | null } | null;
   }[]) {
     const nombre = a.pacientes?.consultorios?.nombre?.trim() || "Sin consultorio";
     conteo.set(nombre, (conteo.get(nombre) ?? 0) + 1);
 
-    const g = ganancias.get(nombre) ?? { nombre, monto: 0, conMonto: 0, sinMonto: 0 };
+    const g = ganancias.get(nombre) ?? {
+      nombre,
+      monto: 0,
+      cobrado: 0,
+      conMonto: 0,
+      sinMonto: 0,
+    };
     if (a.monto_cobrado === null) {
       g.sinMonto += 1;
     } else {
-      g.monto += Number(a.monto_cobrado);
+      const monto = Number(a.monto_cobrado);
+      g.monto += monto;
       g.conMonto += 1;
+      // La plata entra unos 15 dias despues de la entrega: hasta entonces el alta
+      // cuenta para el total del mes pero todavia no esta en la mano.
+      if (yaSeCobro(a.fecha_entrega, a.created_at, hoy)) g.cobrado += monto;
     }
     ganancias.set(nombre, g);
     paresTotal += a.pares ?? 0;
@@ -116,6 +129,7 @@ export default async function DashboardPage({
     .filter((g) => g.conMonto > 0)
     .sort((a, b) => b.monto - a.monto || a.nombre.localeCompare(b.nombre));
   const gananciaTotal = gananciaPorConsultorio.reduce((acc, g) => acc + g.monto, 0);
+  const gananciaCobrada = gananciaPorConsultorio.reduce((acc, g) => acc + g.cobrado, 0);
   const altasSinMonto = [...ganancias.values()].reduce((acc, g) => acc + g.sinMonto, 0);
 
   const { data: candidatas } = await supabase
@@ -176,7 +190,8 @@ export default async function DashboardPage({
         porConsultorio={porConsultorio}
         turnosSinConfirmar={turnosSinConfirmar}
         renovacionesVencidas={renovacionesVencidas}
-        gananciaTotal={gananciaTotal}
+        gananciaCobrada={gananciaCobrada}
+        gananciaPorCobrar={gananciaTotal - gananciaCobrada}
         altasSinMonto={altasSinMonto}
         ganancias={
           <GananciasDelMes
