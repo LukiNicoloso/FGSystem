@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import SeguimientoGrid from "./SeguimientoGrid";
 import TurnosDelDia from "./TurnosDelDia";
 import ResumenDelMes from "./ResumenDelMes";
+import GananciasDelMes, { type GananciaPorConsultorio } from "./GananciasDelMes";
 import { fechaEnArgentina } from "@/lib/recordatorios";
 
 export const dynamic = "force-dynamic";
@@ -75,21 +76,47 @@ export default async function DashboardPage({
   const finDeMes = `${correrMes(mesSeleccionado, 1)}-01T00:00:00-03:00`;
   const { data: altas } = await supabase
     .from("plantillas")
-    .select("id, es_renovacion, pacientes(consultorios(nombre))")
+    .select("id, es_renovacion, pares, monto_cobrado, pacientes(consultorios(nombre))")
     .gte("created_at", inicioDeMes)
     .lt("created_at", finDeMes);
 
   const conteo = new Map<string, number>();
+  // Lo cobrado se acumula por separado: solo entran las altas que tienen monto,
+  // asi que sus consultorios no son necesariamente los mismos que los de arriba.
+  const ganancias = new Map<string, GananciaPorConsultorio>();
+  let paresTotal = 0;
+
   for (const a of (altas ?? []) as unknown as {
     es_renovacion: boolean | null;
+    pares: number | null;
+    monto_cobrado: number | null;
     pacientes: { consultorios: { nombre: string } | null } | null;
   }[]) {
     const nombre = a.pacientes?.consultorios?.nombre?.trim() || "Sin consultorio";
     conteo.set(nombre, (conteo.get(nombre) ?? 0) + 1);
+
+    const g = ganancias.get(nombre) ?? { nombre, monto: 0, conMonto: 0, sinMonto: 0 };
+    if (a.monto_cobrado === null) {
+      g.sinMonto += 1;
+    } else {
+      g.monto += Number(a.monto_cobrado);
+      g.conMonto += 1;
+    }
+    ganancias.set(nombre, g);
+    paresTotal += a.pares ?? 0;
   }
+
   const porConsultorio = [...conteo.entries()]
     .map(([nombre, altas]) => ({ nombre, altas }))
     .sort((a, b) => b.altas - a.altas || a.nombre.localeCompare(b.nombre));
+
+  // Un consultorio sin nada cargado no aporta una barra vacia a la lista de plata:
+  // sus altas ya se cuentan en el aviso de "sin monto".
+  const gananciaPorConsultorio = [...ganancias.values()]
+    .filter((g) => g.conMonto > 0)
+    .sort((a, b) => b.monto - a.monto || a.nombre.localeCompare(b.nombre));
+  const gananciaTotal = gananciaPorConsultorio.reduce((acc, g) => acc + g.monto, 0);
+  const altasSinMonto = [...ganancias.values()].reduce((acc, g) => acc + g.sinMonto, 0);
 
   const { data: candidatas } = await supabase
     .from("plantillas")
@@ -149,6 +176,16 @@ export default async function DashboardPage({
         porConsultorio={porConsultorio}
         turnosSinConfirmar={turnosSinConfirmar}
         renovacionesVencidas={renovacionesVencidas}
+        gananciaTotal={gananciaTotal}
+        altasSinMonto={altasSinMonto}
+        ganancias={
+          <GananciasDelMes
+            mes={etiquetaDeMes(mesSeleccionado)}
+            porConsultorio={gananciaPorConsultorio}
+            sinMontoTotal={altasSinMonto}
+            paresTotal={paresTotal}
+          />
+        }
       />
 
       <TurnosDelDia turnos={turnos} hoy={hoy} />
