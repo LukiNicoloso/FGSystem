@@ -8,7 +8,7 @@ export default async function PacientesPage() {
 
   const [{ data: pacientes }, { data: consultorios }] = await Promise.all([
     supabase.from("pacientes").select("*, consultorios(id, nombre)").order("nombre"),
-    supabase.from("consultorios").select("id, nombre").order("nombre"),
+    supabase.from("consultorios").select("id, nombre, precio_por_par").order("nombre"),
   ]);
 
   return (

@@ -57,3 +57,22 @@ export function parsearPesos(valor: string): number | null {
   const n = Number(limpio);
   return Number.isFinite(n) ? Math.round(n) : null;
 }
+
+/**
+ * Lee del formulario cuantos pares y cuanto se cobro.
+ *
+ * Los dos pueden quedar en null: son campos nuevos y las altas viejas no los
+ * tienen, asi que null significa "no registrado" y no "fue un par" ni "salio
+ * gratis". Lo usan el alta de plantillas y el alta de paciente, que crea una.
+ */
+export function paresYMontoDeForm(formData: FormData): {
+  pares: Pares | null;
+  monto_cobrado: number | null;
+} {
+  const paresCrudo = Number(formData.get("pares"));
+  const montoCrudo = (formData.get("monto_cobrado") as string | null)?.trim();
+  return {
+    pares: esPares(paresCrudo) ? paresCrudo : null,
+    monto_cobrado: montoCrudo ? parsearPesos(montoCrudo) : null,
+  };
+}
