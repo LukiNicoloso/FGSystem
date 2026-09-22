@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { crearPaciente, editarPaciente } from "./actions";
 import { FORMATO_ESPERADO, EJEMPLO_CELULAR, normalizarCelular, mostrarE164 } from "@/lib/telefono";
+import CamposDeCobro from "@/components/CamposDeCobro";
 
 interface Consultorio {
   id: string;
   nombre: string;
+  precio_por_par: number | null;
 }
 
 interface Paciente {
@@ -29,6 +31,12 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
   const [error, setError] = useState("");
   const [previews, setPreviews] = useState<string[]>([]);
   const [celular, setCelular] = useState(paciente?.celular ?? "");
+  // Controlado porque el monto sugerido de la plantilla inicial depende de cual se
+  // elija: sin esto habia que crear el paciente y despues editar la plantilla.
+  const [consultorioId, setConsultorioId] = useState(paciente?.consultorio_id ?? "");
+
+  const precioPorPar =
+    consultorios.find((c) => c.id === consultorioId)?.precio_por_par ?? null;
 
   // Confirmacion en vivo de como se va a guardar el numero. El error recien aparece
   // cuando ya escribio lo suficiente como para que valga la pena avisarle: si no,
@@ -118,7 +126,8 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
             <label className="block text-sm font-medium text-gray-700 mb-1">Consultorio</label>
             <select
               name="consultorio_id"
-              defaultValue={paciente?.consultorio_id ?? ""}
+              value={consultorioId}
+              onChange={(e) => setConsultorioId(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Sin consultorio</option>
@@ -152,6 +161,8 @@ export default function PacienteForm({ consultorios, paciente, onClose }: Props)
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
+              <CamposDeCobro precioPorPar={precioPorPar} />
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Fotos de la pisada</label>

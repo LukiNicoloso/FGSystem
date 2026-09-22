@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { subirFotoCloudinary } from "@/lib/cloudinary";
 import { normalizarCelular, FORMATO_ESPERADO } from "@/lib/telefono";
+import { paresYMontoDeForm } from "@/lib/precios";
 
 /**
  * El celular se valida al guardar para no arrastrar numeros que despues no se
@@ -62,6 +63,9 @@ export async function crearPaciente(formData: FormData) {
     fecha_renovacion,
     foto_url,
     es_renovacion: false,
+    // El cobro se carga en el mismo alta: antes habia que crear el paciente y
+    // despues entrar a editar su plantilla para poder poner el monto.
+    ...paresYMontoDeForm(formData),
   });
   if (plantillaError) throw new Error(plantillaError.message);
 

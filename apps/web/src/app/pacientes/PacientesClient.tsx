@@ -8,6 +8,7 @@ import { eliminarPaciente } from "./actions";
 interface Consultorio {
   id: string;
   nombre: string;
+  precio_por_par: number | null;
 }
 
 interface Paciente {

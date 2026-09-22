@@ -3,21 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { subirFotoCloudinary } from "@/lib/cloudinary";
-import { esPares, parsearPesos } from "@/lib/precios";
-
-/**
- * Cuantos pares y cuanto se cobro. Los dos pueden quedar en null: son campos
- * nuevos y las altas viejas no los tienen, asi que null significa "no registrado"
- * y no "fue un par" ni "salio gratis".
- */
-function paresYMonto(formData: FormData) {
-  const paresCrudo = Number(formData.get("pares"));
-  const montoCrudo = (formData.get("monto_cobrado") as string | null)?.trim();
-  return {
-    pares: esPares(paresCrudo) ? paresCrudo : null,
-    monto_cobrado: montoCrudo ? parsearPesos(montoCrudo) : null,
-  };
-}
+import { paresYMontoDeForm } from "@/lib/precios";
 
 function toFotoUrl(urls: string[]): string | null {
   if (urls.length === 0) return null;
@@ -47,7 +33,7 @@ export async function crearPlantilla(formData: FormData) {
     fecha_renovacion,
     foto_url,
     es_renovacion,
-    ...paresYMonto(formData),
+    ...paresYMontoDeForm(formData),
   }).select("id").single();
   if (error) throw new Error(error.message);
 
@@ -100,7 +86,7 @@ export async function editarPlantilla(id: string, formData: FormData) {
     notas: formData.get("notas") || null,
     fecha_entrega: formData.get("fecha_entrega") || null,
     foto_url: toFotoUrl(allUrls),
-    ...paresYMonto(formData),
+    ...paresYMontoDeForm(formData),
   }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/plantillas");
