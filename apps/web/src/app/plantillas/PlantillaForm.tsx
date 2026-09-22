@@ -2,8 +2,16 @@
 
 import { useState } from "react";
 import { crearPlantilla, editarPlantilla } from "./actions";
+import type { PacienteParaAlta } from "@/lib/pacientes";
+import {
+  formatearPesos,
+  montoSugerido,
+  PARES_POR_DEFECTO,
+  PARES_POSIBLES,
+  type Pares,
+} from "@/lib/precios";
 
-interface Paciente { id: string; nombre: string }
+type Paciente = PacienteParaAlta;
 interface Plantilla {
   id: string;
   paciente_id: string;
@@ -12,6 +20,8 @@ interface Plantilla {
   fecha_entrega: string | null;
   fecha_renovacion: string | null;
   foto_url: string | null;
+  pares: number | null;
+  monto_cobrado: number | null;
 }
 
 interface Props {
@@ -36,6 +46,24 @@ export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault,
   const [error, setError] = useState("");
   const [existingPhotos, setExistingPhotos] = useState<string[]>(parseFotoUrls(plantilla?.foto_url ?? null));
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
+
+  const [pacienteId, setPacienteId] = useState(plantilla?.paciente_id ?? pacienteIdDefault ?? "");
+  // En un alta nueva arrancamos en dos pares, que es lo habitual. Al editar una
+  // plantilla vieja queda en null: esas altas son anteriores a que esto se
+  // registrara y no queremos inventarles una cantidad al abrirlas.
+  const [pares, setPares] = useState<Pares | null>(
+    plantilla ? (plantilla.pares === 1 || plantilla.pares === 2 ? plantilla.pares : null) : PARES_POR_DEFECTO
+  );
+  const [monto, setMonto] = useState(
+    plantilla?.monto_cobrado != null ? String(plantilla.monto_cobrado) : ""
+  );
+  // Una vez que se escribe el monto a mano dejamos de pisarlo: el precio del
+  // consultorio es una sugerencia, no la verdad de lo que se cobro.
+  const [montoEditado, setMontoEditado] = useState(plantilla?.monto_cobrado != null);
+
+  const precioPorPar = pacientes.find((p) => p.id === pacienteId)?.precio_por_par ?? null;
+  const sugerido = pares === null ? null : montoSugerido(precioPorPar, pares);
+  const montoAMostrar = montoEditado || sugerido === null ? monto : String(sugerido);
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -74,9 +102,10 @@ export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault,
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Tiene que vivir dentro del form: FormData solo levanta los campos que estan adentro */}
           <input type="hidden" name="es_renovacion" value={String(esRenovacionDefault ?? false)} />
+          <input type="hidden" name="pares" value={pares === null ? "" : String(pares)} />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Paciente</label>
-            <select name="paciente_id" defaultValue={plantilla?.paciente_id ?? pacienteIdDefault ?? ""} required
+            <select name="paciente_id" value={pacienteId} onChange={(e) => setPacienteId(e.target.value)} required
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Seleccionar paciente</option>
               {pacientes.map((p) => (
@@ -89,6 +118,67 @@ export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault,
             <input type="date" name="fecha_entrega" defaultValue={plantilla?.fecha_entrega ?? ""}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Cantidad</label>
+              <div className="flex gap-2">
+                {PARES_POSIBLES.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setPares(n)}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
+                      pares === n
+                        ? "border-blue-600 bg-blue-600 text-white"
+                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {n === 1 ? "1 par" : "2 pares (x2)"}
+                  </button>
+                ))}
+              </div>
+              {pares === null && (
+                <p className="text-xs text-amber-700 mt-1.5">
+                  Este alta es anterior al registro de cantidad. Si te acordás cuántos
+                  pares fueron, elegilo; si no, dejalo así.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Monto cobrado</label>
+              <input
+                name="monto_cobrado"
+                value={montoAMostrar}
+                onChange={(e) => {
+                  setMontoEditado(true);
+                  setMonto(e.target.value);
+                }}
+                inputMode="numeric"
+                placeholder={precioPorPar === null ? "El consultorio no tiene precio cargado" : "Ej: 190000"}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {montoEditado && sugerido !== null && String(sugerido) !== monto ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMontoEditado(false);
+                    setMonto("");
+                  }}
+                  className="text-xs text-blue-600 hover:underline mt-1"
+                >
+                  Volver al sugerido ({formatearPesos(sugerido)})
+                </button>
+              ) : (
+                <p className="text-xs text-gray-400 mt-1">
+                  {precioPorPar === null
+                    ? "Se sugiere solo cuando el consultorio del paciente tiene precio cargado."
+                    : "Sugerido según el precio del consultorio. Se puede corregir."}
+                </p>
+              )}
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
             <textarea name="notas" defaultValue={plantilla?.notas ?? ""} rows={3}

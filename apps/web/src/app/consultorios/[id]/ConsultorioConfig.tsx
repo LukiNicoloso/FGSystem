@@ -11,11 +11,13 @@ import {
   TIPOS_TURNO,
   type TipoTurno,
 } from "@/lib/recordatorios";
+import { DESCUENTO_SEGUNDO_PAR, formatearPesos, montoSugerido, parsearPesos } from "@/lib/precios";
 
 interface Consultorio {
   id: string;
   nombre: string;
   direccion: string | null;
+  precio_por_par: number | null;
   recordatorio_estudio_activo: boolean;
   recordatorio_entrega_activo: boolean;
   recordatorio_firma: string | null;
@@ -67,6 +69,9 @@ export default function ConsultorioConfig({ consultorio }: Props) {
 
   const [nombre, setNombre] = useState(consultorio.nombre);
   const [direccion, setDireccion] = useState(consultorio.direccion ?? "");
+  const [precio, setPrecio] = useState(
+    consultorio.precio_por_par === null ? "" : String(consultorio.precio_por_par)
+  );
   const [firma, setFirma] = useState(consultorio.recordatorio_firma ?? FIRMA_POR_DEFECTO);
   const [telefonoAvisos, setTelefonoAvisos] = useState(consultorio.telefono_avisos ?? "");
   const [activos, setActivos] = useState<Record<TipoTurno, boolean>>({
@@ -78,6 +83,11 @@ export default function ConsultorioConfig({ consultorio }: Props) {
   const puedeActivar = faltantes.length === 0;
 
   const algunoActivo = puedeActivar && (activos.estudio || activos.entrega);
+
+  // La cuenta a la vista: es la forma de que se note un cero de mas antes de que
+  // ese precio se copie en las altas.
+  const sugerido = montoSugerido(parsearPesos(precio), 2);
+  const precioSugerencia = sugerido === null ? null : formatearPesos(sugerido);
 
   // Las vistas previas usan un turno de ejemplo, pero la direccion y la firma son
   // las que se estan editando: es el mensaje exacto que va a recibir el paciente.
@@ -137,6 +147,30 @@ export default function ConsultorioConfig({ consultorio }: Props) {
             />
             <p className="text-xs text-gray-400 mt-1">
               Se la mandamos al paciente en los recordatorios, así sabe dónde presentarse.
+            </p>
+          </div>
+          <div>
+            <label className={labelClass}>Precio por par</label>
+            <input
+              name="precio_por_par"
+              value={precio}
+              onChange={(e) => setPrecio(e.target.value)}
+              inputMode="numeric"
+              className={inputClass}
+              placeholder="Ej: 100000"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Lo que se cobra hoy por <span className="font-medium text-gray-500">un</span> par
+              en este consultorio. Con esto se sugiere el monto al cargar un alta
+              {precioSugerencia && (
+                <>
+                  {" "}
+                  —hoy un alta de dos pares daría{" "}
+                  <span className="font-medium text-gray-500">{precioSugerencia}</span>, con el{" "}
+                  {Math.round(DESCUENTO_SEGUNDO_PAR * 100)}% del segundo par
+                </>
+              )}
+              . Si cambiás el precio, los montos ya cargados no se tocan.
             </p>
           </div>
         </div>
