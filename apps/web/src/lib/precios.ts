@@ -76,3 +76,32 @@ export function paresYMontoDeForm(formData: FormData): {
     monto_cobrado: montoCrudo ? parsearPesos(montoCrudo) : null,
   };
 }
+
+/**
+ * Cuantos dias despues de la entrega entra la plata. Es aproximado: Noemi cobra
+ * "a los 15 dias" de entregar, no en una fecha exacta.
+ */
+export const DIAS_HASTA_EL_COBRO = 15;
+
+/**
+ * Cuando se cobra un alta.
+ *
+ * La base es la fecha de entrega. Cuando falta —hay una decena de altas viejas sin
+ * cargarla— se usa la fecha en que se dio de alta, que segun Noemi suele coincidir
+ * con la entrega. Se prefiere eso a descartar la fila: el monto existe igual.
+ */
+export function fechaDeCobro(fechaEntrega: string | null, createdAt: string): string {
+  const base = fechaEntrega ?? createdAt.slice(0, 10);
+  const d = new Date(base + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + DIAS_HASTA_EL_COBRO);
+  return d.toISOString().slice(0, 10);
+}
+
+/** true si ya deberia haber entrado la plata de ese alta. */
+export function yaSeCobro(
+  fechaEntrega: string | null,
+  createdAt: string,
+  hoy: string
+): boolean {
+  return fechaDeCobro(fechaEntrega, createdAt) <= hoy;
+}
