@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { pacientesParaAlta } from "@/lib/pacientes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import HistorialActions from "./HistorialActions";
@@ -33,6 +34,8 @@ type Plantilla = {
   estado_contacto: string | null;
   notas: string | null;
   foto_url: string | null;
+  pares: number | null;
+  monto_cobrado: number | null;
 };
 
 type ActivityItem =
@@ -44,10 +47,10 @@ export default async function HistorialPacientePage({ params }: { params: Promis
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: paciente }, { data: plantillas }, { data: todosPacientes }] = await Promise.all([
+  const [{ data: paciente }, { data: plantillas }, todosPacientes] = await Promise.all([
     supabase.from("pacientes").select("*, consultorios(nombre)").eq("id", id).single(),
     supabase.from("plantillas").select("*").eq("paciente_id", id).order("created_at", { ascending: false }),
-    supabase.from("pacientes").select("id, nombre").order("nombre"),
+    pacientesParaAlta(supabase),
   ]);
 
   if (!paciente) notFound();
@@ -148,7 +151,7 @@ export default async function HistorialPacientePage({ params }: { params: Promis
 
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Actividades</h2>
-        <HistorialActions pacienteId={id} pacientes={todosPacientes ?? []} />
+        <HistorialActions pacienteId={id} pacientes={todosPacientes} />
       </div>
 
       {activities.length === 0 ? (
@@ -183,7 +186,7 @@ export default async function HistorialPacientePage({ params }: { params: Promis
                         </div>
                         <PlantillaCardActions
                           plantilla={p}
-                          pacientes={todosPacientes ?? []}
+                          pacientes={todosPacientes}
                         />
                       </div>
 

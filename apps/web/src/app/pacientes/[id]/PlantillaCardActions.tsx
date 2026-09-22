@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import PlantillaForm from "@/app/plantillas/PlantillaForm";
 import { eliminarPlantilla } from "@/app/plantillas/actions";
+import type { PacienteParaAlta } from "@/lib/pacientes";
 
-interface Paciente { id: string; nombre: string }
+type Paciente = PacienteParaAlta;
 
 interface PlantillaData {
   id: string;
@@ -15,6 +16,8 @@ interface PlantillaData {
   fecha_entrega: string | null;
   fecha_renovacion: string | null;
   foto_url: string | null;
+  pares: number | null;
+  monto_cobrado: number | null;
 }
 
 interface Props {

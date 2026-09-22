@@ -20,7 +20,12 @@ CREATE TABLE consultorios (
   -- se pone aca para no tener el mismo texto en dos lugares que se desincronizan.
   recordatorio_firma TEXT,
   -- A donde se avisa cuando un paciente rechaza el turno. Vacio = no se avisa.
-  telefono_avisos TEXT
+  telefono_avisos TEXT,
+
+  -- Lo que se cobra hoy por UN par en este consultorio. Es la referencia con la
+  -- que se sugiere el monto al cargar un alta; los montos ya cobrados no se tocan
+  -- cuando este precio cambia.
+  precio_por_par NUMERIC(12,2)
 );
 
 -- Pacientes
@@ -90,7 +95,14 @@ CREATE TABLE plantillas (
   ),
   fecha_contactado DATE,
   fecha_agendado DATE,
-  es_renovacion BOOLEAN DEFAULT FALSE
+  es_renovacion BOOLEAN DEFAULT FALSE,
+
+  -- Cuanto se cobro por este alta.
+  -- pares en NULL son las altas anteriores a que esto se registrara: es "no
+  -- sabemos", distinto de "fue un par". Lo mismo monto_cobrado, que se copia del
+  -- precio del consultorio al crear el alta y queda congelado ahi.
+  pares SMALLINT CHECK (pares = ANY (ARRAY[1, 2])),
+  monto_cobrado NUMERIC(12,2)
 );
 
 -- =============================================

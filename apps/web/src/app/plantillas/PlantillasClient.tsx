@@ -3,8 +3,9 @@
 import { useState } from "react";
 import PlantillaForm from "./PlantillaForm";
 import { eliminarPlantilla } from "./actions";
+import type { PacienteParaAlta } from "@/lib/pacientes";
 
-interface Paciente { id: string; nombre: string }
+type Paciente = PacienteParaAlta;
 interface Plantilla {
   id: string;
   paciente_id: string;
@@ -13,6 +14,8 @@ interface Plantilla {
   fecha_entrega: string | null;
   fecha_renovacion: string | null;
   foto_url: string | null;
+  pares: number | null;
+  monto_cobrado: number | null;
   pacientes: Paciente | null;
 }
 

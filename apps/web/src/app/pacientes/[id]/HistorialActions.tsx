@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import PlantillaForm from "@/app/plantillas/PlantillaForm";
+import type { PacienteParaAlta } from "@/lib/pacientes";
 
-interface Paciente { id: string; nombre: string }
+type Paciente = PacienteParaAlta;
 
 interface Props {
   pacienteId: string;

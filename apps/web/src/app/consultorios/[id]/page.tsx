@@ -16,7 +16,7 @@ export default async function ConsultorioPage({
   const { data: consultorio } = await supabase
     .from("consultorios")
     .select(
-      "id, nombre, direccion, recordatorio_estudio_activo, recordatorio_entrega_activo, recordatorio_firma, telefono_avisos"
+      "id, nombre, direccion, precio_por_par, recordatorio_estudio_activo, recordatorio_entrega_activo, recordatorio_firma, telefono_avisos"
     )
     .eq("id", id)
     .single();
@@ -30,7 +30,7 @@ export default async function ConsultorioPage({
           ← Volver a consultorios
         </Link>
         <h1 className="text-2xl font-bold text-gray-900 mt-2">{consultorio.nombre}</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Datos y recordatorios</p>
+        <p className="text-sm text-gray-500 mt-0.5">Datos, precio y recordatorios</p>
       </div>
 
       <ConsultorioConfig
