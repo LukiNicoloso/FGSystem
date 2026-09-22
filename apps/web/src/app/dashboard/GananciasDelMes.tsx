@@ -39,6 +39,74 @@ interface Props {
   paresTotal: number;
 }
 
+/**
+ * Una fila con su detalle al pasar por encima.
+ *
+ * El detalle aparece con hover y tambien con foco: en el telefono no hay mouse, y
+ * un dato que solo existe al pasar el cursor ahi no existe. Con tabIndex la fila
+ * se puede tocar y tambien recorrer con el teclado.
+ *
+ * Es CSS puro a proposito: alcanza para esto y evita bajar toda la tarjeta al
+ * cliente solo para manejar un hover.
+ */
+function Fila({ c, max }: { c: GananciaPorConsultorio; max: number }) {
+  const porCobrar = c.monto - c.cobrado;
+  return (
+    <div
+      className="group relative flex items-center gap-3 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+      tabIndex={0}
+      aria-label={`${c.nombre}: ${formatearPesos(c.cobrado)} cobrado, ${formatearPesos(porCobrar)} por cobrar`}
+    >
+      <span className="w-28 sm:w-36 shrink-0 text-sm text-gray-600 truncate" title={c.nombre}>
+        {c.nombre}
+      </span>
+      <div className="flex-1 bg-gray-100 rounded h-5 min-w-0 overflow-hidden">
+        {/* Una sola barra partida: el largo total es lo del mes y el tramo oscuro
+            es lo que ya entro. */}
+        <div
+          className="flex h-full rounded overflow-hidden"
+          style={{ width: `${max > 0 ? Math.max((c.monto / max) * 100, 2) : 0}%` }}
+        >
+          <div
+            className="h-full bg-emerald-600"
+            style={{ width: `${c.monto > 0 ? (c.cobrado / c.monto) * 100 : 0}%` }}
+          />
+          <div className="h-full flex-1 bg-emerald-200" />
+        </div>
+      </div>
+      <span className="w-24 text-right text-sm font-medium text-gray-900 tabular-nums">
+        {formatearPesos(c.monto)}
+      </span>
+
+      <div
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-28 sm:left-36 mb-1 z-10 hidden group-hover:block group-focus:block rounded-lg bg-gray-900 px-3 py-2 shadow-lg"
+      >
+        <p className="text-xs font-semibold text-white whitespace-nowrap">{c.nombre}</p>
+        <div className="mt-1 space-y-0.5">
+          <p className="flex items-center gap-2 text-xs text-gray-200 whitespace-nowrap">
+            <span className="w-2 h-2 rounded-sm bg-emerald-500 shrink-0" />
+            Ya cobrado
+            <span className="ml-auto pl-3 font-medium tabular-nums text-white">
+              {formatearPesos(c.cobrado)}
+            </span>
+          </p>
+          <p className="flex items-center gap-2 text-xs text-gray-200 whitespace-nowrap">
+            <span className="w-2 h-2 rounded-sm bg-emerald-200 shrink-0" />
+            Por cobrar
+            <span className="ml-auto pl-3 font-medium tabular-nums text-white">
+              {formatearPesos(porCobrar)}
+            </span>
+          </p>
+        </div>
+        <p className="mt-1 text-[11px] text-gray-400 whitespace-nowrap">
+          {c.conMonto} {c.conMonto === 1 ? "alta" : "altas"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function GananciasDelMes({
   mes,
   porConsultorio,
@@ -81,31 +149,7 @@ export default function GananciasDelMes({
         <>
           <div className="space-y-2">
             {porConsultorio.map((c) => (
-              <div key={c.nombre} className="flex items-center gap-3">
-                <span
-                  className="w-28 sm:w-36 shrink-0 text-sm text-gray-600 truncate"
-                  title={c.nombre}
-                >
-                  {c.nombre}
-                </span>
-                <div className="flex-1 bg-gray-100 rounded h-5 min-w-0 overflow-hidden">
-                  {/* Una sola barra partida: el largo total es lo del mes y el tramo
-                      oscuro es lo que ya entro. */}
-                  <div
-                    className="flex h-full rounded overflow-hidden"
-                    style={{ width: `${max > 0 ? Math.max((c.monto / max) * 100, 2) : 0}%` }}
-                  >
-                    <div
-                      className="h-full bg-emerald-600"
-                      style={{ width: `${c.monto > 0 ? (c.cobrado / c.monto) * 100 : 0}%` }}
-                    />
-                    <div className="h-full flex-1 bg-emerald-200" />
-                  </div>
-                </div>
-                <span className="w-24 text-right text-sm font-medium text-gray-900 tabular-nums">
-                  {formatearPesos(c.monto)}
-                </span>
-              </div>
+              <Fila key={c.nombre} c={c} max={max} />
             ))}
           </div>
 
