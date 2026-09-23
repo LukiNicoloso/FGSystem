@@ -7,8 +7,14 @@
  * que crear una nueva y actualizar el SID. Por eso el script lista primero las que
  * ya existen y no duplica nada sin avisar.
  *
- *   node twilio/crear-plantillas.mjs            # lista lo que hay y lo que falta
- *   node twilio/crear-plantillas.mjs --crear    # crea las que falten
+ *   node twilio/crear-plantillas.mjs             # lista lo que hay y su estado
+ *   node twilio/crear-plantillas.mjs --crear     # crea las que falten
+ *   node twilio/crear-plantillas.mjs --aprobar   # manda a revision de Meta las que
+ *                                                # todavia no estan aprobadas
+ *
+ * Crear una plantilla en Twilio no alcanza para poder mandarla: ademas hay que
+ * pedirle la aprobacion a Meta, que tarda dias. Sin eso, el envio falla con el
+ * error 63016 fuera de la ventana de 24 h.
  *
  * Lee TWILIO_ACCOUNT_SID y TWILIO_AUTH_TOKEN de apps/web/.env.local.
  */
@@ -50,6 +56,38 @@ async function listarExistentes() {
   return new Map((data.contents ?? []).map((c) => [c.friendly_name, c.sid]));
 }
 
+/**
+ * El estado en Meta: approved, pending, rejected o unsubmitted. Una recien creada
+ * responde "unsubmitted", no null: null es solo cuando la consulta falla.
+ */
+async function estadoDeAprobacion(sid) {
+  const res = await fetch(`https://content.twilio.com/v1/Content/${sid}/ApprovalRequests`, {
+    headers: { Authorization: auth },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.whatsapp?.status ?? null;
+}
+
+/**
+ * Pide la aprobacion a Meta. La categoria es UTILITY porque son avisos sobre algo
+ * que el paciente ya pidio, no promociones; allow_category_change deja que Meta la
+ * corrija en vez de rechazar la plantilla entera si no esta de acuerdo.
+ */
+async function pedirAprobacion(sid, nombre) {
+  const res = await fetch(
+    `https://content.twilio.com/v1/Content/${sid}/ApprovalRequests/whatsapp`,
+    {
+      method: "POST",
+      headers: { Authorization: auth, "Content-Type": "application/json" },
+      body: JSON.stringify({ name: nombre, category: "UTILITY", allow_category_change: true }),
+    }
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message ?? `HTTP ${res.status}`);
+  return data?.whatsapp?.status ?? "pendiente";
+}
+
 async function crear(definicion) {
   const { _comentario, ...cuerpo } = definicion;
   void _comentario;
@@ -64,9 +102,14 @@ async function crear(definicion) {
 }
 
 const crearFaltantes = process.argv.includes("--crear");
+const aprobar = process.argv.includes("--aprobar");
 const existentes = await listarExistentes();
 
-console.log(crearFaltantes ? "Creando las que falten...\n" : "Estado actual (usá --crear para crear las que falten)\n");
+console.log(
+  crearFaltantes || aprobar
+    ? "Creando y/o mandando a revisión...\n"
+    : "Estado actual (--crear para crear las que falten, --aprobar para mandarlas a revisión)\n"
+);
 
 const variables = [];
 for (const [clave, definicion] of plantillas) {
@@ -80,9 +123,23 @@ for (const [clave, definicion] of plantillas) {
     console.log(`  creada     ${nombre.padEnd(26)} ${sid}`);
   } else {
     console.log(`  falta      ${nombre}`);
+    continue;
   }
 
-  if (sid) variables.push([`TWILIO_CONTENT_SID_${clave.toUpperCase()}`, sid]);
+  // Una plantilla creada pero sin aprobar no sirve: el envio falla fuera de la
+  // ventana de 24 h, que es justo cuando se usa.
+  const estado = await estadoDeAprobacion(sid);
+  if (estado === "approved") {
+    console.log(`             aprobada por Meta`);
+  } else if (aprobar && (estado === null || estado === "unsubmitted" || estado === "rejected")) {
+    const nuevo = await pedirAprobacion(sid, nombre);
+    console.log(`             enviada a revisión de Meta (${nuevo})`);
+  } else {
+    const falta = estado === "unsubmitted" || estado === "rejected" || estado === null;
+    console.log(`             ${estado ?? "sin pedir aprobación"}${falta && !aprobar ? "  <- falta --aprobar" : ""}`);
+  }
+
+  variables.push([`TWILIO_CONTENT_SID_${clave.toUpperCase()}`, sid]);
 }
 
 if (variables.length > 0) {

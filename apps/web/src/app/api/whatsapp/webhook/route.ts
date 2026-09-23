@@ -124,7 +124,9 @@ export async function POST(request: Request) {
   }
 
   if (respuesta === "no") {
-    await avisarRechazo(config, turno, paciente);
+    // El celular guardado es el que se muestra; "desde" es el respaldo para el modo
+    // de prueba, donde las respuestas no vienen del numero del paciente.
+    await avisarRechazo(config, turno, paciente, turno.pacientes?.celular_e164 ?? desde);
   }
 
   return respuestaVacia();
@@ -137,12 +139,22 @@ async function avisarRechazo(
     hora: string;
     consultorios: { nombre: string; telefono_avisos: string | null } | null;
   },
-  paciente: string
+  paciente: string,
+  celular: string
 ) {
-  const contentSid = process.env.TWILIO_CONTENT_SID_AVISO_RECHAZO;
   const consultorio = turno.consultorios?.nombre ?? "sin consultorio";
   const fecha = formatearFechaTurno(turno.fecha);
   const hora = formatearHoraTurno(turno.hora);
+
+  // Dos plantillas conviven a proposito. La v3 suma el celular del paciente, que
+  // WhatsApp convierte en un link para contactarlo sin buscarlo por el nombre, pero
+  // hasta que Meta la apruebe su SID no existe. Mientras tanto sigue saliendo la v2,
+  // que tiene cuatro variables: mandarle cinco la romperia en silencio.
+  const sidV3 = process.env.TWILIO_CONTENT_SID_AVISO_RECHAZO_V3;
+  const contentSid = sidV3 ?? process.env.TWILIO_CONTENT_SID_AVISO_RECHAZO;
+  const variables: Record<string, string> = sidV3
+    ? { "1": paciente, "2": fecha, "3": hora, "4": consultorio, "5": celular }
+    : { "1": paciente, "2": fecha, "3": hora, "4": consultorio };
 
   // FG se entera siempre; el consultorio se suma si cargo un numero. Si son el
   // mismo, se manda una sola vez.
@@ -154,11 +166,11 @@ async function avisarRechazo(
     try {
       await enviarWhatsapp(config, {
         para: destino,
-        cuerpo: `${paciente} rechazó su turno del ${fecha} a las ${hora} en ${consultorio}.`,
+        // El texto plano solo se usa dentro de la ventana de 24 h, asi que no
+        // depende de ninguna aprobacion y siempre lleva el celular.
+        cuerpo: `${paciente} rechazó su turno del ${fecha} a las ${hora} en ${consultorio}. Para reprogramar, escribile al ${celular}.`,
         contentSid,
-        variables: contentSid
-          ? { "1": paciente, "2": fecha, "3": hora, "4": consultorio }
-          : undefined,
+        variables: contentSid ? variables : undefined,
       });
     } catch (err) {
       console.error(

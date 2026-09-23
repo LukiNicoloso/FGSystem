@@ -5,7 +5,9 @@
     "pacientes quede versionado y revisable en git.",
     "",
     "Variables: {{1}} paciente, {{2}} fecha, {{3}} hora, {{4}} direccion, {{5}} firma.",
-    "En el aviso de rechazo: {{1}} paciente, {{2}} fecha, {{3}} hora, {{4}} consultorio.",
+    "En el aviso de rechazo v3: {{1}} paciente, {{2}} fecha, {{3}} hora, {{4}}",
+    "consultorio, {{5}} el celular del paciente en E.164, que WhatsApp convierte en",
+    "un link para llamarlo o escribirle sin tener que buscarlo por el nombre.",
     "En el resumen de fallos: {{1}} total de turnos, {{2}} fecha, {{3}} cuantos",
     "quedaron sin avisar, {{4}} el detalle. Las variables no pueden llevar saltos de",
     "linea, por eso el detalle va en una sola linea separado por '·'.",
@@ -15,7 +17,12 @@
     "cierre es texto fijo.",
     "",
     "Una plantilla aprobada no se edita: hay que crear otra y cambiar el ContentSid.",
-    "Para crear o actualizar: node twilio/crear-plantillas.mjs --crear"
+    "Por eso conviven v2 y v3 del aviso de rechazo: la v2 sigue en uso hasta que",
+    "Meta apruebe la v3 y se cargue su SID.",
+    "",
+    "  node twilio/crear-plantillas.mjs             # lista lo que hay y lo que falta",
+    "  node twilio/crear-plantillas.mjs --crear     # crea las que falten",
+    "  node twilio/crear-plantillas.mjs --aprobar   # las manda a revision de Meta"
   ],
   "recordatorio_estudio": {
     "friendly_name": "fg_recordatorio_estudio_v2",
@@ -102,6 +109,22 @@
     "types": {
       "twilio/text": {
         "body": "Aviso de FGSystem: de los {{1}} turnos del {{2}}, no se pudo avisar a {{3}}. Detalle: {{4}}. Conviene contactarlos por teléfono para confirmar la asistencia."
+      }
+    }
+  },
+  "aviso_rechazo_v3": {
+    "friendly_name": "fg_aviso_rechazo_v3",
+    "language": "es",
+    "variables": {
+      "1": "Adrián Cerqueti",
+      "2": "martes 15 de septiembre",
+      "3": "15:30",
+      "4": "Mariana",
+      "5": "+5491131096959"
+    },
+    "types": {
+      "twilio/text": {
+        "body": "Aviso de FGSystem: el paciente {{1}} rechazó su turno del {{2}} a las {{3}} en el consultorio {{4}}. Para reprogramar, escribile al {{5}}. Conviene hacerlo hoy mismo."
       }
     }
   }
