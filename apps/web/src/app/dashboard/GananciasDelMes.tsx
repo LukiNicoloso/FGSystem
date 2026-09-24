@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DIAS_HASTA_EL_COBRO, formatearPesos } from "@/lib/precios";
+import { FILTROS, type FiltroQuien } from "@/lib/atencion";
 
 /**
  * Cuanto se gano en el mes, por consultorio, separando lo que ya entro de lo que
@@ -33,6 +34,9 @@ export interface GananciaPorConsultorio {
 
 interface Props {
   mes: string;
+  /** "YYYY-MM" del mes mirado, para que los links del filtro no lo pierdan. */
+  mesParam: string;
+  quien: FiltroQuien;
   porConsultorio: GananciaPorConsultorio[];
   sinMontoTotal: number;
   /** Pares registrados en el mes. Es lo que hace que el total no sea altas x precio. */
@@ -109,6 +113,8 @@ function Fila({ c, max }: { c: GananciaPorConsultorio; max: number }) {
 
 export default function GananciasDelMes({
   mes,
+  mesParam,
+  quien,
   porConsultorio,
   sinMontoTotal,
   paresTotal,
@@ -126,10 +132,32 @@ export default function GananciasDelMes({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <h3 className="text-sm font-semibold text-gray-900">Ganancias por consultorio</h3>
-      <p className="text-xs text-gray-500 mt-0.5 mb-4">
-        Lo que generaron las altas de {mes}, según el monto cargado en cada una.
-      </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900">Ganancias por consultorio</h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Lo que generaron las altas de {mes}, según el monto cargado en cada una.
+          </p>
+        </div>
+        {/* Solo filtra la plata: las altas de al lado siguen contando todo el mes. */}
+        <div className="flex rounded-lg border border-gray-200 overflow-hidden shrink-0">
+          {FILTROS.map((f) => (
+            <Link
+              key={f.value}
+              href={`/dashboard?mes=${mesParam}&quien=${f.value}`}
+              aria-current={quien === f.value ? "true" : undefined}
+              className={`px-2.5 py-1 text-xs font-medium transition-colors ${
+                quien === f.value
+                  ? "bg-emerald-600 text-white"
+                  : "bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {f.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+      <div className="mb-4" />
 
       {!hayAlgoCargado ? (
         <p className="text-sm text-gray-400 text-center py-8">
@@ -142,7 +170,9 @@ export default function GananciasDelMes({
               .
             </>
           ) : (
-            `No hubo altas en ${mes}.`
+            quien === "todos"
+              ? `No hubo altas en ${mes}.`
+              : `No hay altas de ${FILTROS.find((f) => f.value === quien)?.label} en ${mes}.`
           )}
         </p>
       ) : (

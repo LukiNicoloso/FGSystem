@@ -5,6 +5,7 @@ import ResumenDelMes from "./ResumenDelMes";
 import GananciasDelMes, { type GananciaPorConsultorio } from "./GananciasDelMes";
 import { fechaEnArgentina } from "@/lib/recordatorios";
 import { yaSeCobro } from "@/lib/precios";
+import { esFiltro, FILTRO_POR_DEFECTO } from "@/lib/atencion";
 
 export const dynamic = "force-dynamic";
 
@@ -43,10 +44,14 @@ function correrMes(mes: string, delta: number): string {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string }>;
+  searchParams: Promise<{ mes?: string; quien?: string }>;
 }) {
   const supabase = await createClient();
-  const { mes: mesParam } = await searchParams;
+  const { mes: mesParam, quien: quienParam } = await searchParams;
+
+  // El panel de plata arranca mostrando lo de Noe, que es lo que se queria mirar;
+  // el selector deja ver el total o lo del otro sin salir de la pantalla.
+  const quien = esFiltro(quienParam) ? quienParam : FILTRO_POR_DEFECTO;
 
   const ahora = new Date();
   // En hora argentina: con la fecha UTC, despues de las 21:00 locales el sistema ya
@@ -77,7 +82,7 @@ export default async function DashboardPage({
   const finDeMes = `${correrMes(mesSeleccionado, 1)}-01T00:00:00-03:00`;
   const { data: altas } = await supabase
     .from("plantillas")
-    .select("id, es_renovacion, pares, monto_cobrado, fecha_entrega, created_at, pacientes(consultorios(nombre))")
+    .select("id, es_renovacion, pares, monto_cobrado, atendido_por, fecha_entrega, created_at, pacientes(consultorios(nombre))")
     .gte("created_at", inicioDeMes)
     .lt("created_at", finDeMes);
 
@@ -91,12 +96,17 @@ export default async function DashboardPage({
     es_renovacion: boolean | null;
     pares: number | null;
     monto_cobrado: number | null;
+    atendido_por: string | null;
     fecha_entrega: string | null;
     created_at: string;
     pacientes: { consultorios: { nombre: string } | null } | null;
   }[]) {
     const nombre = a.pacientes?.consultorios?.nombre?.trim() || "Sin consultorio";
     conteo.set(nombre, (conteo.get(nombre) ?? 0) + 1);
+
+    // Las altas de arriba cuentan todo lo del mes; la plata se filtra por quien
+    // atendio, que es la pregunta que responde esta parte.
+    if (quien !== "todos" && a.atendido_por !== quien) continue;
 
     const g = ganancias.get(nombre) ?? {
       nombre,
@@ -184,6 +194,7 @@ export default async function DashboardPage({
         mes={etiquetaDeMes(mesSeleccionado)}
         mesAnterior={correrMes(mesSeleccionado, -1)}
         mesSiguiente={esMesActual ? null : correrMes(mesSeleccionado, 1)}
+        quien={quien}
         esMesActual={esMesActual}
         altasDelMes={(altas ?? []).length}
         renovacionesDelMes={renovacionesDelMes}
@@ -196,6 +207,8 @@ export default async function DashboardPage({
         ganancias={
           <GananciasDelMes
             mes={etiquetaDeMes(mesSeleccionado)}
+            mesParam={mesSeleccionado}
+            quien={quien}
             porConsultorio={gananciaPorConsultorio}
             sinMontoTotal={altasSinMonto}
             paresTotal={paresTotal}
