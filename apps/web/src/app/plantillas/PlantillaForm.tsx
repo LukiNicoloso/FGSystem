@@ -16,6 +16,7 @@ interface Plantilla {
   foto_url: string | null;
   pares: number | null;
   monto_cobrado: number | null;
+  atendido_por: string | null;
 }
 
 interface Props {
@@ -103,6 +104,7 @@ export default function PlantillaForm({ pacientes, plantilla, pacienteIdDefault,
             paresIniciales={plantilla?.pares ?? null}
             montoInicial={plantilla?.monto_cobrado ?? null}
             editando={Boolean(plantilla)}
+            atendidoPorInicial={plantilla?.atendido_por ?? null}
           />
 
           <div>

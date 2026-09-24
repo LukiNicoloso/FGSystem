@@ -1,3 +1,4 @@
+import { esQuien, type Quien } from "@/lib/atencion";
 /**
  * Cuanto se cobra por un alta de plantillas.
  *
@@ -68,12 +69,17 @@ export function parsearPesos(valor: string): number | null {
 export function paresYMontoDeForm(formData: FormData): {
   pares: Pares | null;
   monto_cobrado: number | null;
+  atendido_por: Quien | null;
 } {
   const paresCrudo = Number(formData.get("pares"));
   const montoCrudo = (formData.get("monto_cobrado") as string | null)?.trim();
+  const quien = formData.get("atendido_por");
   return {
     pares: esPares(paresCrudo) ? paresCrudo : null,
     monto_cobrado: montoCrudo ? parsearPesos(montoCrudo) : null,
+    // Sin valor queda sin asignar en vez de caer en alguien por defecto: un alta
+    // mal atribuida suma plata que no es de esa persona y no se nota.
+    atendido_por: esQuien(quien) ? quien : null,
   };
 }
 

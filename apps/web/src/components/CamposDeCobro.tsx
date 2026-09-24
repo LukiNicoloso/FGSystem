@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { QUIEN_POR_DEFECTO, QUIENES, type Quien } from "@/lib/atencion";
 import {
   formatearPesos,
   montoSugerido,
@@ -10,8 +11,11 @@ import {
 } from "@/lib/precios";
 
 /**
- * Cuantos pares y cuanto se cobro, para cualquier formulario que cree o edite una
- * plantilla.
+ * Quien atendio, cuantos pares y cuanto se cobro, para cualquier formulario que
+ * cree o edite una plantilla.
+ *
+ * Quien atendio esta aca y no en los datos del paciente porque alimenta los mismos
+ * numeros del mes: sirve para saber cuanto gano cada uno.
  *
  * Vive aparte porque hay dos formas de dar de alta una plantilla —desde la pantalla
  * de plantillas y junto con el alta del paciente— y tener el campo dos veces
@@ -36,6 +40,8 @@ interface Props {
    * nuevo suele ser de uno.
    */
   paresPorDefecto?: Pares;
+  /** Al editar, quien figuraba. En null se arranca en quien atiende casi siempre. */
+  atendidoPorInicial?: string | null;
 }
 
 export default function CamposDeCobro({
@@ -44,7 +50,13 @@ export default function CamposDeCobro({
   montoInicial,
   editando = false,
   paresPorDefecto = PARES_POR_DEFECTO,
+  atendidoPorInicial,
 }: Props) {
+  const [quien, setQuien] = useState<Quien>(
+    atendidoPorInicial === "noe" || atendidoPorInicial === "nico"
+      ? atendidoPorInicial
+      : QUIEN_POR_DEFECTO
+  );
   const [pares, setPares] = useState<Pares | null>(
     paresIniciales === 1 || paresIniciales === 2
       ? paresIniciales
@@ -63,6 +75,27 @@ export default function CamposDeCobro({
   return (
     <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
       <input type="hidden" name="pares" value={pares === null ? "" : String(pares)} />
+      <input type="hidden" name="atendido_por" value={quien} />
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Atendió</label>
+        <div className="flex gap-2">
+          {QUIENES.map((q) => (
+            <button
+              key={q.value}
+              type="button"
+              onClick={() => setQuien(q.value)}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
+                quien === q.value
+                  ? "border-blue-600 bg-blue-600 text-white"
+                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              {q.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">Cantidad</label>

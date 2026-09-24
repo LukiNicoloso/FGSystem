@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { etiquetaDeQuien, type FiltroQuien } from "@/lib/atencion";
 import type { ReactNode } from "react";
 import { formatearPesos } from "@/lib/precios";
 
@@ -22,6 +23,8 @@ interface Props {
   /** null cuando ya estamos en el mes actual: no se navega al futuro. */
   mesSiguiente: string | null;
   esMesActual: boolean;
+  /** De quien es la plata que se muestra. El numero de arriba lo sigue. */
+  quien: FiltroQuien;
   altasDelMes: number;
   renovacionesDelMes: number;
   porConsultorio: AltaPorConsultorio[];
@@ -65,6 +68,7 @@ export default function ResumenDelMes({
   mesAnterior,
   mesSiguiente,
   esMesActual,
+  quien,
   altasDelMes,
   renovacionesDelMes,
   porConsultorio,
@@ -88,7 +92,7 @@ export default function ResumenDelMes({
             renovaciones de mas abajo siempre son del presente. */}
         <div className="flex items-center gap-1">
           <Link
-            href={`/dashboard?mes=${mesAnterior}`}
+            href={`/dashboard?mes=${mesAnterior}&quien=${quien}`}
             aria-label="Mes anterior"
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-xl transition-colors"
           >
@@ -99,7 +103,7 @@ export default function ResumenDelMes({
           </span>
           {mesSiguiente ? (
             <Link
-              href={`/dashboard?mes=${mesSiguiente}`}
+              href={`/dashboard?mes=${mesSiguiente}&quien=${quien}`}
               aria-label="Mes siguiente"
               className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 text-xl transition-colors"
             >
@@ -121,7 +125,7 @@ export default function ResumenDelMes({
       >
         <Tile
           valor={formatearPesos(gananciaCobrada)}
-          etiqueta="Cobrado del mes"
+          etiqueta={quien === "todos" ? "Cobrado del mes" : `Cobrado del mes · ${etiquetaDeQuien(quien)}`}
           // En telefono ocupa la fila entera: es el numero mas largo de los cinco
           // y en media columna se cortaria apenas pase el millon.
           ancho="col-span-2 lg:col-span-1"

@@ -36,6 +36,7 @@ type Plantilla = {
   foto_url: string | null;
   pares: number | null;
   monto_cobrado: number | null;
+  atendido_por: string | null;
 };
 
 type ActivityItem =

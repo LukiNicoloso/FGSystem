@@ -106,7 +106,11 @@ CREATE TABLE plantillas (
   -- sabemos", distinto de "fue un par". Lo mismo monto_cobrado, que se copia del
   -- precio del consultorio al crear el alta y queda congelado ahi.
   pares SMALLINT CHECK (pares = ANY (ARRAY[1, 2])),
-  monto_cobrado NUMERIC(12,2)
+  monto_cobrado NUMERIC(12,2),
+  -- Quien atendio. Va aca y no en el paciente porque la plata se cuenta por alta:
+  -- un mismo paciente puede tener el estudio hecho por una persona y la renovacion
+  -- por otra. El panel de ganancias filtra por esto.
+  atendido_por TEXT CHECK (atendido_por = ANY (ARRAY['noe', 'nico']))
 );
 
 -- =============================================
