@@ -12,6 +12,10 @@
  *
  *   {{1}} paciente   {{2}} fecha   {{3}} hora   {{4}} direccion   {{5}} firma
  *
+ * Hay una tercera plantilla para las entregas por franja: en Kinest el paciente no
+ * tiene hora, pasa cuando puede dentro de una ventana. Ahi {{3}} no es una hora
+ * sino el rango entero ("entre las 08:30 y las 11:00").
+ *
  * Este archivo es la unica fuente de los mensajes: lo usan las vistas previas de la
  * ficha del consultorio y, mas adelante, el envio real.
  */
@@ -41,10 +45,23 @@ export const TIPO_TURNO_POR_DEFECTO: TipoTurno = "estudio";
  * ContentSid de la plantilla aprobada de cada tipo. El texto real vive en Twilio
  * (definido en twilio/plantillas.json); acá solo mandamos las variables.
  */
-export function contentSidDe(tipo: TipoTurno): string | undefined {
+export function contentSidDe(tipo: TipoTurno, conFranja = false): string | undefined {
+  if (conFranja) return process.env.TWILIO_CONTENT_SID_RECORDATORIO_ENTREGA_FRANJA;
   return tipo === "entrega"
     ? process.env.TWILIO_CONTENT_SID_RECORDATORIO_ENTREGA
     : process.env.TWILIO_CONTENT_SID_RECORDATORIO_ESTUDIO;
+}
+
+/**
+ * Si la plantilla de franja ya esta aprobada y cargada.
+ *
+ * Mientras no lo este, un turno con ventana sale como un turno normal con la hora
+ * de comienzo: es lo que viene pasando hasta hoy. La alternativa —mandar el texto
+ * del rango por la plantilla comun— lo dejaria con la frase rota, y no mandar nada
+ * dejaria al paciente sin aviso, que es peor que un aviso impreciso.
+ */
+export function hayPlantillaDeFranja(): boolean {
+  return Boolean(process.env.TWILIO_CONTENT_SID_RECORDATORIO_ENTREGA_FRANJA);
 }
 
 /** Las variables {{1}}..{{5}} de la plantilla, en el orden que espera Twilio. */
@@ -90,14 +107,20 @@ const CONFIRMACION = "¿Podría ayudarnos confirmando su asistencia? Responda SI
  * De paso se lee mejor: el paciente sabe quien le escribe en la primera linea, que
  * importa cuando el mensaje llega de un numero que no tiene agendado.
  */
-export function armarRecordatorio(tipo: TipoTurno, v: VariablesRecordatorio): string {
-  const lineas = [
-    `Hola ${v.paciente}, le escribimos de ${v.firma}.`,
-    "",
-    tipo === "entrega"
+export function armarRecordatorio(
+  tipo: TipoTurno,
+  v: VariablesRecordatorio,
+  conFranja = false
+): string {
+  // Con franja, v.hora no es una hora sino el rango ya escrito, asi que la frase
+  // cambia entera: no lleva "a las" adelante.
+  const cuerpo = conFranja
+    ? `Le recordamos que puede pasar a retirar sus plantillas el ${v.fecha}, ${v.hora}, en ${v.direccion}.`
+    : tipo === "entrega"
       ? `Le recordamos su turno para la entrega de sus plantillas el ${v.fecha} a las ${v.hora} en ${v.direccion}.`
-      : `Le recordamos su turno el ${v.fecha} a las ${v.hora} en ${v.direccion}.`,
-  ];
+      : `Le recordamos su turno el ${v.fecha} a las ${v.hora} en ${v.direccion}.`;
+
+  const lineas = [`Hola ${v.paciente}, le escribimos de ${v.firma}.`, "", cuerpo];
 
   if (tipo === "entrega") {
     lineas.push("", "Por favor traiga el calzado que usa habitualmente, así las probamos en el momento.");

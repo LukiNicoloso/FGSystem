@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { crearTurno, editarTurno } from "./actions";
 import { TIPOS_TURNO, TIPO_TURNO_POR_DEFECTO } from "@/lib/recordatorios";
+import { describirFranjas, franjaDe, usaFranja } from "@/lib/franjas";
 
 interface Paciente { id: string; nombre: string; dni: string | null }
 interface Consultorio { id: string; nombre: string }
@@ -42,6 +43,16 @@ export default function TurnoForm({ pacientes, consultorios, turno, fechaDefault
   const [busqueda, setBusqueda] = useState(pacienteInicial?.nombre ?? "");
   const [pacienteId, setPacienteId] = useState(turno?.paciente_id ?? "");
   const [abierto, setAbierto] = useState(false);
+
+  // Controlados porque la franja se deduce de los tres: que consultorio, que tipo
+  // de turno y que dia de la semana cae la fecha.
+  const [consultorioId, setConsultorioId] = useState(turno?.consultorio_id ?? "");
+  const [tipo, setTipo] = useState(turno?.tipo ?? TIPO_TURNO_POR_DEFECTO);
+  const [fecha, setFecha] = useState(turno?.fecha ?? fechaDefault ?? "");
+
+  const nombreConsultorio = consultorios.find((c) => c.id === consultorioId)?.nombre;
+  const esFranja = usaFranja(nombreConsultorio, tipo);
+  const franja = esFranja && fecha ? franjaDe(nombreConsultorio, fecha) : null;
   const comboRef = useRef<HTMLDivElement>(null);
 
   const pacientesFiltrados = pacientes.filter((p) => {
@@ -135,7 +146,8 @@ export default function TurnoForm({ pacientes, consultorios, turno, fechaDefault
             <label className="block text-sm font-medium text-gray-700 mb-1">Consultorio</label>
             <select
               name="consultorio_id"
-              defaultValue={turno?.consultorio_id ?? ""}
+              value={consultorioId}
+              onChange={(e) => setConsultorioId(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Sin consultorio</option>
@@ -157,7 +169,8 @@ export default function TurnoForm({ pacientes, consultorios, turno, fechaDefault
                     type="radio"
                     name="tipo"
                     value={t.value}
-                    defaultChecked={(turno?.tipo ?? TIPO_TURNO_POR_DEFECTO) === t.value}
+                    checked={tipo === t.value}
+                    onChange={(e) => setTipo(e.target.value)}
                     className="mt-0.5 accent-blue-600"
                   />
                   <span className="text-sm text-gray-900 leading-tight">{t.label}</span>
@@ -175,22 +188,58 @@ export default function TurnoForm({ pacientes, consultorios, turno, fechaDefault
               <input
                 type="date"
                 name="fecha"
-                defaultValue={turno?.fecha ?? fechaDefault}
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Hora (formato 24hs)</label>
-              <input
-                type="time"
-                name="hora"
-                defaultValue={turno?.hora?.slice(0, 5) ?? horaDefault}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {franja ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ventana</label>
+                {/* Sin hora: el paciente pasa cuando puede dentro del rango, asi que
+                    lo que viaja es el comienzo y el final. */}
+                <input type="hidden" name="hora" value={franja.desde} />
+                <input type="hidden" name="hora_fin" value={franja.hasta} />
+                <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-700">
+                  {franja.desde} a {franja.hasta}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hora (formato 24hs)</label>
+                <input
+                  type="time"
+                  name="hora"
+                  defaultValue={turno?.hora?.slice(0, 5) ?? horaDefault}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
           </div>
+
+          {esFranja && (
+            <p
+              className={`text-xs rounded-lg px-3 py-2 ${
+                franja
+                  ? "text-gray-500 bg-gray-50 border border-gray-200"
+                  : "text-amber-700 bg-amber-50 border border-amber-200"
+              }`}
+            >
+              {franja ? (
+                <>
+                  En {nombreConsultorio} no se da hora: el paciente pasa a retirar cuando
+                  puede dentro de la ventana. El recordatorio le va a decir el rango.
+                </>
+              ) : (
+                <>
+                  {nombreConsultorio} entrega {describirFranjas(nombreConsultorio)}, y ese
+                  día no cae en ninguna. Podés guardarlo igual con una hora puntual.
+                </>
+              )}
+            </p>
+          )}
 
           {turno ? (
             <div>

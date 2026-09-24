@@ -11,6 +11,8 @@ export async function crearTurno(formData: FormData) {
     consultorio_id: formData.get("consultorio_id") || null,
     fecha: formData.get("fecha"),
     hora: formData.get("hora"),
+    // Solo los turnos por ventana lo traen. Vacio es un turno con hora exacta.
+    hora_fin: formData.get("hora_fin") || null,
     tipo: formData.get("tipo") || "estudio",
     estado: "pendiente",
   });
@@ -27,6 +29,9 @@ export async function editarTurno(id: string, formData: FormData) {
       consultorio_id: formData.get("consultorio_id") || null,
       fecha: formData.get("fecha"),
       hora: formData.get("hora"),
+      // Se escribe siempre, tambien en null: si el turno deja de caer en una
+      // franja, tiene que dejar de ser una ventana.
+      hora_fin: formData.get("hora_fin") || null,
       tipo: formData.get("tipo") || "estudio",
       estado: formData.get("estado"),
     })

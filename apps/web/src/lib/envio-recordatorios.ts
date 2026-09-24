@@ -13,10 +13,12 @@ import {
   FIRMA_POR_DEFECTO,
   fechaDeManana,
   contentSidDe,
+  hayPlantillaDeFranja,
   variablesDeRecordatorio,
   TELEFONO_AVISOS_FG,
   type TipoTurno,
 } from "@/lib/recordatorios";
+import { textoDeFranja } from "@/lib/franjas";
 
 /**
  * Seleccion y envio de los recordatorios del dia siguiente.
@@ -54,6 +56,8 @@ type TurnoConDatos = {
   id: string;
   fecha: string;
   hora: string;
+  /** Cuando tiene valor, el turno es una ventana y no una hora. */
+  hora_fin: string | null;
   tipo: string;
   pacientes: { nombre: string; celular_e164: string | null } | null;
   consultorios: {
@@ -82,7 +86,7 @@ export async function enviarRecordatorios(
   const { data, error } = await supabase
     .from("turnos")
     .select(
-      "id, fecha, hora, tipo, " +
+      "id, fecha, hora, hora_fin, tipo, " +
         "pacientes(nombre, celular_e164), " +
         "consultorios(nombre, direccion, recordatorio_estudio_activo, recordatorio_entrega_activo, recordatorio_firma)"
     )
@@ -158,18 +162,23 @@ export async function enviarRecordatorios(
       continue;
     }
 
+    // Un turno con hora_fin es una ventana, no una hora. Solo se anuncia como tal
+    // si la plantilla de franja ya esta aprobada; si no, sale como turno normal con
+    // la hora de comienzo, que es como venia saliendo hasta ahora.
+    const conFranja = Boolean(t.hora_fin) && hayPlantillaDeFranja();
+
     const variables = {
       paciente: paciente.trim().split(/\s+/)[0],
       fecha: formatearFechaTurno(t.fecha),
-      hora: formatearHoraTurno(t.hora),
+      hora: conFranja ? textoDeFranja(t.hora, t.hora_fin!) : formatearHoraTurno(t.hora),
       direccion: consultorio.direccion ?? consultorio.nombre,
       firma: consultorio.recordatorio_firma?.trim() || FIRMA_POR_DEFECTO,
     };
     // El cuerpo se arma igual para poder mostrarlo en el resultado, pero lo que
     // viaja es la plantilla con botones: asi la respuesta llega como un id exacto
     // y no como texto libre que haya que interpretar.
-    const cuerpo = armarRecordatorio(tipo, variables);
-    const contentSid = contentSidDe(tipo);
+    const cuerpo = armarRecordatorio(tipo, variables, conFranja);
+    const contentSid = contentSidDe(tipo, conFranja);
 
     if (simulacion || !config) {
       resultado.enviados.push({
