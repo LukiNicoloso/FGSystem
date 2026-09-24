@@ -15,6 +15,10 @@
     "quedaron sin avisar, {{4}} el detalle. Las variables no pueden llevar saltos de",
     "linea, por eso el detalle va en una sola linea separado por '·'.",
     "",
+    "{{2}} no es solo la fecha: cuando el turno es al dia siguiente —que es siempre,",
+    "porque el cron sale la vispera— arranca con 'dia de mañana'. El 'dia de' es lo",
+    "que la hace encajar con el 'el' fijo que ya tienen las plantillas aprobadas.",
+    "",
     "Meta rechaza plantillas que empiezan o terminan con una variable, y las que",
     "tienen muchas variables para su largo. Por eso la firma va al principio y el",
     "cierre es texto fijo.",
@@ -32,7 +36,7 @@
     "language": "es",
     "variables": {
       "1": "Adrián",
-      "2": "martes 15 de septiembre",
+      "2": "día de mañana, martes 15 de septiembre",
       "3": "15:30",
       "4": "Sanabria 3282 2C, Devoto",
       "5": "Fuskás Motion"
@@ -61,7 +65,7 @@
     "language": "es",
     "variables": {
       "1": "Adrián",
-      "2": "martes 15 de septiembre",
+      "2": "día de mañana, martes 15 de septiembre",
       "3": "15:30",
       "4": "Sanabria 3282 2C, Devoto",
       "5": "Fuskás Motion"
@@ -136,7 +140,7 @@
     "language": "es",
     "variables": {
       "1": "Adrián",
-      "2": "sábado 26 de septiembre",
+      "2": "día de mañana, sábado 26 de septiembre",
       "3": "entre las 08:30 y las 11:00",
       "4": "Sanabria 3282 2C, Devoto",
       "5": "Fuskás Motion"

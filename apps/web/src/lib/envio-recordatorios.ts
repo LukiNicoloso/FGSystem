@@ -8,10 +8,11 @@ import {
 } from "@/lib/resumen-fallos";
 import {
   armarRecordatorio,
-  formatearFechaTurno,
+  fechaParaRecordatorio,
   formatearHoraTurno,
   FIRMA_POR_DEFECTO,
   fechaDeManana,
+  fechaEnArgentina,
   contentSidDe,
   hayPlantillaDeFranja,
   variablesDeRecordatorio,
@@ -96,6 +97,10 @@ export async function enviarRecordatorios(
     .order("hora", { ascending: true });
   if (error) throw new Error(error.message);
 
+  // Todos los turnos de la tanda son del mismo dia, asi que el texto de la fecha
+  // se arma una sola vez.
+  const fechaLarga = fechaParaRecordatorio(fecha, fechaEnArgentina());
+
   const resultado: ResultadoEnvio = {
     fecha,
     simulacion,
@@ -169,7 +174,7 @@ export async function enviarRecordatorios(
 
     const variables = {
       paciente: paciente.trim().split(/\s+/)[0],
-      fecha: formatearFechaTurno(t.fecha),
+      fecha: fechaLarga,
       hora: conFranja ? textoDeFranja(t.hora, t.hora_fin!) : formatearHoraTurno(t.hora),
       direccion: consultorio.direccion ?? consultorio.nombre,
       firma: consultorio.recordatorio_firma?.trim() || FIRMA_POR_DEFECTO,

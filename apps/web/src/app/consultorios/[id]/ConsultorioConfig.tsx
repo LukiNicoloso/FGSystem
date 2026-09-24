@@ -91,10 +91,12 @@ export default function ConsultorioConfig({ consultorio }: Props) {
 
   // Las vistas previas usan un turno de ejemplo, pero la direccion y la firma son
   // las que se estan editando: es el mensaje exacto que va a recibir el paciente.
+  // La fecha lleva el "día de mañana" porque el recordatorio siempre sale la
+  // vispera: mostrar solo la fecha aca haria que la vista previa mintiera.
   function previewDe(tipo: TipoTurno) {
     return armarRecordatorio(tipo, {
       paciente: "Adrián",
-      fecha: "martes 8 de septiembre",
+      fecha: "día de mañana, martes 8 de septiembre",
       hora: "15:30",
       direccion: direccion.trim() || "—",
       firma: firma.trim() || FIRMA_POR_DEFECTO,

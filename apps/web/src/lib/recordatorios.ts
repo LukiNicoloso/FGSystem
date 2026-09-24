@@ -159,6 +159,28 @@ export function formatearFechaTurno(fecha: string): string {
 }
 
 /** "15:30:00" -> "15:30" */
+/**
+ * La fecha como la lee el paciente en el recordatorio.
+ *
+ * El recordatorio sale siempre el dia anterior, asi que decir "sabado 26 de
+ * septiembre" obliga a fijarse en el calendario que ya sabe el sistema. Cuando el
+ * turno es al dia siguiente se antepone "dia de mañana".
+ *
+ * Se conserva ademas la fecha completa porque el mensaje queda en el chat: un
+ * "mañana" suelto, leido dos dias despues, no dice nada.
+ *
+ * El "dia de" no es adorno: las plantillas aprobadas tienen un "el" fijo antes de
+ * esta variable, y "el mañana" no se puede leer. Asi encaja sin crear plantillas
+ * nuevas, que serian tres aprobaciones mas de Meta.
+ *
+ * Si no es el dia siguiente —un reenvio con ?fecha= de un dia puntual— se manda la
+ * fecha sola, que es lo unico cierto.
+ */
+export function fechaParaRecordatorio(fecha: string, hoy: string): string {
+  const larga = formatearFechaTurno(fecha);
+  return fecha === fechaDeManana(new Date(hoy + "T12:00:00Z")) ? `día de mañana, ${larga}` : larga;
+}
+
 export function formatearHoraTurno(hora: string): string {
   return hora.slice(0, 5);
 }
