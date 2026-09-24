@@ -51,6 +51,10 @@ CREATE TABLE turnos (
   consultorio_id UUID REFERENCES consultorios(id) ON DELETE SET NULL,
   fecha DATE NOT NULL,
   hora TIME NOT NULL,
+  -- Turnos que son una ventana y no una hora. En Kinest el paciente pasa a retirar
+  -- cuando puede dentro de un rango, asi que hora es el comienzo y hora_fin el
+  -- final. En NULL es un turno con hora exacta, que es como funcionan los demas.
+  hora_fin TIME,
   estado estado_turno DEFAULT 'pendiente',
   -- Define que plantilla de WhatsApp se manda: la de estudio o la de entrega.
   tipo TEXT NOT NULL DEFAULT 'estudio' CHECK (tipo = ANY (ARRAY['estudio', 'entrega'])),

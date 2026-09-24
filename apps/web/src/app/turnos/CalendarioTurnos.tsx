@@ -13,6 +13,8 @@ interface Turno {
   id: string;
   paciente_id: string;
   consultorio_id: string | null;
+  /** Cuando tiene valor, el turno es una ventana y no una hora. */
+  hora_fin: string | null;
   fecha: string;
   hora: string;
   estado: string;
@@ -279,6 +281,13 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
                             <p className={`text-xs font-semibold ${color.text}`}>{turno.pacientes?.nombre ?? "—"}</p>
                             {turno.consultorios && (
                               <p className="text-xs text-gray-500">{turno.consultorios.nombre}</p>
+                            )}
+                            {/* La columna de la izquierda ya muestra el comienzo, asi
+                                que aca alcanza con hasta cuando llega la ventana. */}
+                            {turno.hora_fin && (
+                              <span className="inline-block mt-0.5 mr-1 text-xs px-1.5 py-0.5 rounded-full bg-white/70 text-gray-600 border border-gray-300">
+                                hasta {turno.hora_fin.slice(0, 5)}
+                              </span>
                             )}
                             <span className="inline-block mt-0.5 mr-1 text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
                               {etiquetaTipoTurno(turno.tipo)}

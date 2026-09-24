@@ -8,6 +8,9 @@
     "En el aviso de rechazo v3: {{1}} paciente, {{2}} fecha, {{3}} hora, {{4}}",
     "consultorio, {{5}} el celular del paciente en E.164, que WhatsApp convierte en",
     "un link para llamarlo o escribirle sin tener que buscarlo por el nombre.",
+    "En el recordatorio de entrega con franja, {{3}} no es una hora sino la ventana",
+    "entera ('entre las 08:30 y las 11:00'): en Kinest el paciente pasa cuando quiere",
+    "dentro del rango, asi que decirle una hora exacta seria mentirle.",
     "En el resumen de fallos: {{1}} total de turnos, {{2}} fecha, {{3}} cuantos",
     "quedaron sin avisar, {{4}} el detalle. Las variables no pueden llevar saltos de",
     "linea, por eso el detalle va en una sola linea separado por '·'.",
@@ -125,6 +128,35 @@
     "types": {
       "twilio/text": {
         "body": "Aviso de FGSystem: el paciente {{1}} rechazó su turno del {{2}} a las {{3}} en el consultorio {{4}}. Para reprogramar, escribile al {{5}}. Conviene hacerlo hoy mismo."
+      }
+    }
+  },
+  "recordatorio_entrega_franja": {
+    "friendly_name": "fg_recordatorio_entrega_franja",
+    "language": "es",
+    "variables": {
+      "1": "Adrián",
+      "2": "sábado 26 de septiembre",
+      "3": "entre las 08:30 y las 11:00",
+      "4": "Sanabria 3282 2C, Devoto",
+      "5": "Fuskás Motion"
+    },
+    "types": {
+      "twilio/quick-reply": {
+        "body": "Hola {{1}}, le escribimos de {{5}}.\n\nLe recordamos que puede pasar a retirar sus plantillas el {{2}}, {{3}}, en {{4}}.\n\nPor favor traiga el calzado que usa habitualmente, así las probamos en el momento.\n\n¿Podría ayudarnos confirmando su asistencia?\n\n¡Muchas gracias!",
+        "actions": [
+          {
+            "title": "Sí, confirmo",
+            "id": "si"
+          },
+          {
+            "title": "No puedo",
+            "id": "no"
+          }
+        ]
+      },
+      "twilio/text": {
+        "body": "Hola {{1}}, le escribimos de {{5}}.\n\nLe recordamos que puede pasar a retirar sus plantillas el {{2}}, {{3}}, en {{4}}.\n\nPor favor traiga el calzado que usa habitualmente, así las probamos en el momento.\n\n¿Podría ayudarnos confirmando su asistencia? Responda SI o NO.\n\n¡Muchas gracias!"
       }
     }
   }
