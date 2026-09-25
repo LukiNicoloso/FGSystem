@@ -73,6 +73,43 @@ export async function crearPaciente(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
+/**
+ * Alta minima desde la pantalla de Turnos: nombre, DNI y celular, sin plantilla.
+ *
+ * El alta completa crea ademas la primera plantilla con su monto y quien atendio.
+ * Aca eso sobra: se esta agendando un turno para alguien que todavia no existe en
+ * el sistema, y frenar a cargar precios en ese momento es la friccion que se
+ * queria sacar. La plantilla se carga despues, cuando haya algo que cobrar.
+ *
+ * Devuelve el paciente para poder seleccionarlo en el turno sin recargar.
+ */
+export async function crearPacienteRapido(
+  formData: FormData
+): Promise<{ id: string; nombre: string; dni: string | null; consultorio_id: string | null }> {
+  const supabase = await createClient();
+
+  const nombre = ((formData.get("nombre") as string | null) ?? "").trim();
+  if (!nombre) throw new Error("El nombre no puede quedar vacío");
+
+  const { celular, celular_e164 } = celularValidado(formData);
+
+  const { data, error } = await supabase
+    .from("pacientes")
+    .insert({
+      nombre,
+      dni: (formData.get("dni") as string | null)?.trim() || null,
+      celular,
+      celular_e164,
+    })
+    .select("id, nombre, dni, consultorio_id")
+    .single();
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/pacientes");
+  revalidatePath("/turnos");
+  return data;
+}
+
 export async function editarPaciente(id: string, formData: FormData) {
   const supabase = await createClient();
   const deporte = formData.get("deporte") === "on";
