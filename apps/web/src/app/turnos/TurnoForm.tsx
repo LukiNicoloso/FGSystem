@@ -2,10 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import { crearTurno, editarTurno } from "./actions";
+import { crearPacienteRapido } from "@/app/pacientes/actions";
+import { EJEMPLO_CELULAR } from "@/lib/telefono";
 import { TIPOS_TURNO, TIPO_TURNO_POR_DEFECTO } from "@/lib/recordatorios";
 import { describirFranjas, franjaDe, usaFranja } from "@/lib/franjas";
 
-interface Paciente { id: string; nombre: string; dni: string | null }
+interface Paciente { id: string; nombre: string; dni: string | null; consultorio_id: string | null }
 interface Consultorio { id: string; nombre: string }
 interface Turno {
   id: string;
@@ -44,6 +46,16 @@ export default function TurnoForm({ pacientes, consultorios, turno, fechaDefault
   const [pacienteId, setPacienteId] = useState(turno?.paciente_id ?? "");
   const [abierto, setAbierto] = useState(false);
 
+  // Alta rapida: cuando el paciente no existe todavia, se crea desde aca con lo
+  // minimo en vez de tener que salir a la pantalla de Pacientes y volver.
+  const [creando, setCreando] = useState(false);
+  const [guardandoPaciente, setGuardandoPaciente] = useState(false);
+  const [errorPaciente, setErrorPaciente] = useState("");
+  const [nuevos, setNuevos] = useState<Paciente[]>([]);
+  const [nuevoNombre, setNuevoNombre] = useState("");
+  const [nuevoDni, setNuevoDni] = useState("");
+  const [nuevoCelular, setNuevoCelular] = useState("");
+
   // Controlados porque la franja se deduce de los tres: que consultorio, que tipo
   // de turno y que dia de la semana cae la fecha.
   const [consultorioId, setConsultorioId] = useState(turno?.consultorio_id ?? "");
@@ -55,7 +67,10 @@ export default function TurnoForm({ pacientes, consultorios, turno, fechaDefault
   const franja = esFranja && fecha ? franjaDe(nombreConsultorio, fecha) : null;
   const comboRef = useRef<HTMLDivElement>(null);
 
-  const pacientesFiltrados = pacientes.filter((p) => {
+  // Los recien creados se suman en memoria: el server component no se refresca
+  // hasta cerrar el formulario y el paciente tiene que poder elegirse ya.
+  const todosLosPacientes = [...pacientes, ...nuevos];
+  const pacientesFiltrados = todosLosPacientes.filter((p) => {
     const q = busqueda.toLowerCase();
     return p.nombre.toLowerCase().includes(q) || (p.dni ?? "").includes(q);
   });
@@ -70,10 +85,39 @@ export default function TurnoForm({ pacientes, consultorios, turno, fechaDefault
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  async function crearPaciente() {
+    const datos = new FormData();
+    datos.set("nombre", nuevoNombre);
+    datos.set("dni", nuevoDni);
+    datos.set("celular", nuevoCelular);
+    await handleCrearPaciente(datos);
+  }
+
+  async function handleCrearPaciente(datos: FormData) {
+    setGuardandoPaciente(true);
+    setErrorPaciente("");
+    try {
+      const p = await crearPacienteRapido(datos);
+      // Se agrega a la lista local: el server component no se refresca hasta que
+      // se cierre el formulario, y el paciente tiene que quedar elegido ya.
+      setNuevos((prev) => [...prev, p]);
+      seleccionarPaciente(p);
+      setCreando(false);
+    } catch (err) {
+      setErrorPaciente(err instanceof Error ? err.message : "Error inesperado");
+    } finally {
+      setGuardandoPaciente(false);
+    }
+  }
+
   function seleccionarPaciente(p: Paciente) {
     setPacienteId(p.id);
     setBusqueda(p.nombre);
     setAbierto(false);
+    // Casi todos los turnos son en el consultorio del paciente, asi que se completa
+    // solo. Se puede cambiar despues: es un atajo, no una regla. Si el paciente no
+    // tiene consultorio no se pisa lo que ya hubiera elegido a mano.
+    if (p.consultorio_id) setConsultorioId(p.consultorio_id);
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -119,26 +163,87 @@ export default function TurnoForm({ pacientes, consultorios, turno, fechaDefault
               />
               {abierto && busqueda.length > 0 && (
                 <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {pacientesFiltrados.length === 0 ? (
+                  {pacientesFiltrados.length === 0 && (
                     <p className="px-3 py-2 text-sm text-gray-400">Sin resultados</p>
-                  ) : (
-                    pacientesFiltrados.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => seleccionarPaciente(p)}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
-                      >
-                        <span className="font-medium text-gray-900">{p.nombre}</span>
-                        {p.dni && <span className="text-gray-400 ml-2 text-xs">DNI {p.dni}</span>}
-                      </button>
-                    ))
                   )}
+                  {pacientesFiltrados.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => seleccionarPaciente(p)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
+                    >
+                      <span className="font-medium text-gray-900">{p.nombre}</span>
+                      {p.dni && <span className="text-gray-400 ml-2 text-xs">DNI {p.dni}</span>}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNuevoNombre(busqueda.trim());
+                      setCreando(true);
+                      setAbierto(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 border-t border-gray-100 font-medium transition-colors"
+                  >
+                    + Dar de alta a &quot;{busqueda.trim()}&quot;
+                  </button>
                 </div>
               )}
             </div>
-            {pacienteId && (
+            {pacienteId && !creando && (
               <p className="text-xs text-green-600 mt-1">✓ Paciente seleccionado</p>
+            )}
+
+            {creando && (
+              /* Sin plantilla a proposito: se esta agendando, no cobrando. La
+                 plantilla se carga despues, cuando haya algo que cobrar. */
+              <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50/50 p-3 space-y-2">
+                <p className="text-xs font-medium text-gray-700">Paciente nuevo</p>
+                <input
+                  value={nuevoNombre}
+                  onChange={(e) => setNuevoNombre(e.target.value)}
+                  placeholder="Nombre y apellido"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    value={nuevoDni}
+                    onChange={(e) => setNuevoDni(e.target.value)}
+                    placeholder="DNI (opcional)"
+                    inputMode="numeric"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    value={nuevoCelular}
+                    onChange={(e) => setNuevoCelular(e.target.value)}
+                    placeholder={EJEMPLO_CELULAR}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  Se crea solo con estos datos. Las plantillas se cargan después, desde
+                  su ficha.
+                </p>
+                {errorPaciente && <p className="text-xs text-red-600">{errorPaciente}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setCreando(false); setErrorPaciente(""); }}
+                    className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={crearPaciente}
+                    disabled={guardandoPaciente || !nuevoNombre.trim()}
+                    className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {guardandoPaciente ? "Creando..." : "Crear y usar"}
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 

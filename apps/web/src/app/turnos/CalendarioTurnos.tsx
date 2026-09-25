@@ -7,7 +7,7 @@ import { eliminarTurno } from "./actions";
 import { etiquetaTipoTurno } from "@/lib/recordatorios";
 import { estadoVisualDeTurno, contarQueRequierenAtencion } from "@/lib/turnos";
 
-interface Paciente { id: string; nombre: string; dni: string | null }
+interface Paciente { id: string; nombre: string; dni: string | null; consultorio_id: string | null }
 interface Consultorio { id: string; nombre: string }
 interface Turno {
   id: string;
@@ -42,6 +42,16 @@ const SLOTS = Array.from({ length: 25 }, (_, i) => {
   const m = (totalMin % 60).toString().padStart(2, "0");
   return `${h}:${m}`;
 }); // 08:00 … 20:00
+
+/**
+ * Dos letras del nombre del consultorio, para poder distinguirlos sin depender del
+ * color. Puede haber repetidas —Mordor y moron nico dan "Mo"— pero el color sigue
+ * estando: la etiqueta suma, no reemplaza.
+ */
+function abreviar(nombre: string): string {
+  const limpio = nombre.trim();
+  return (limpio[0] ?? "?").toUpperCase() + (limpio[1] ?? "").toLowerCase();
+}
 
 const COLORES = [
   { light: "bg-blue-100", text: "text-blue-700", dot: "bg-blue-500", border: "border-blue-300" },
@@ -148,8 +158,17 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
     return a.turno ? -1 : 1;
   });
 
+  // La primera letra se pone a mano y no con la clase capitalize de Tailwind:
+  // esa capitaliza cada palabra y deja "Sábado, 26 De Septiembre".
   const labelDiaSeleccionado = diaSeleccionado
-    ? new Date(diaSeleccionado + "T00:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })
+    ? (() => {
+        const t = new Date(diaSeleccionado + "T00:00:00").toLocaleDateString("es-AR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+        });
+        return t.charAt(0).toUpperCase() + t.slice(1);
+      })()
     : "";
 
   // Los que necesitan que alguien haga algo, solo de hoy en adelante: los de un
@@ -224,17 +243,26 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
                       {dia}
                     </span>
                     <div className="flex flex-wrap gap-0.5 justify-center">
-                      {turnosDia.slice(0, 5).map((t) => {
+                      {turnosDia.slice(0, 4).map((t) => {
                         const ci = t.consultorio_id ? (colorMap[t.consultorio_id] ?? 0) : 0;
+                        const nombre = t.consultorios?.nombre;
                         return (
-                          <span key={t.id}
-                            className={`w-2 h-2 rounded-full ${esSel ? "bg-white opacity-75" : COLORES[ci].dot}`}
-                            title={t.pacientes?.nombre ?? ""} />
+                          <span
+                            key={t.id}
+                            className={`px-1 rounded text-[10px] font-semibold leading-[14px] ${
+                              esSel
+                                ? "bg-white/25 text-white"
+                                : `${COLORES[ci].light} ${COLORES[ci].text}`
+                            }`}
+                            title={`${t.pacientes?.nombre ?? ""}${nombre ? ` · ${nombre}` : ""}`}
+                          >
+                            {nombre ? abreviar(nombre) : "—"}
+                          </span>
                         );
                       })}
-                      {turnosDia.length > 5 && (
-                        <span className={`text-xs leading-none ${esSel ? "text-white opacity-75" : "text-gray-400"}`}>
-                          +{turnosDia.length - 5}
+                      {turnosDia.length > 4 && (
+                        <span className={`text-[10px] leading-[14px] ${esSel ? "text-white opacity-75" : "text-gray-400"}`}>
+                          +{turnosDia.length - 4}
                         </span>
                       )}
                     </div>
@@ -245,13 +273,21 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
 
             {/* Leyenda */}
             {consultorios.length > 0 && (
-              <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-gray-100">
-                {consultorios.map((c) => (
-                  <div key={c.id} className="flex items-center gap-1.5 text-xs text-gray-500">
-                    <span className={`w-2.5 h-2.5 rounded-full ${COLORES[colorMap[c.id] ?? 0].dot}`} />
-                    {c.nombre}
-                  </div>
-                ))}
+              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
+                {consultorios.map((c) => {
+                  const col = COLORES[colorMap[c.id] ?? 0];
+                  return (
+                    <div
+                      key={c.id}
+                      className={`flex items-center gap-1.5 text-xs font-medium rounded-lg border px-2 py-1 ${col.border} ${col.text} bg-white`}
+                    >
+                      <span className={`px-1 rounded text-[10px] font-semibold ${col.light}`}>
+                        {abreviar(c.nombre)}
+                      </span>
+                      {c.nombre}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -261,7 +297,7 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
         {diaSeleccionado && (
           <div className="bg-white rounded-xl border border-gray-200 flex flex-col max-h-[700px]">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
-              <h3 className="text-sm font-semibold text-gray-900 capitalize">{labelDiaSeleccionado}</h3>
+              <h3 className="text-sm font-semibold text-gray-900">{labelDiaSeleccionado}</h3>
               <button onClick={() => setDiaSeleccionado(null)}
                 className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
             </div>
@@ -280,7 +316,11 @@ export default function CalendarioTurnos({ turnos, pacientes, consultorios, mesS
                           <div>
                             <p className={`text-xs font-semibold ${color.text}`}>{turno.pacientes?.nombre ?? "—"}</p>
                             {turno.consultorios && (
-                              <p className="text-xs text-gray-500">{turno.consultorios.nombre}</p>
+                              <span
+                                className={`inline-block mt-0.5 mr-1 text-xs px-1.5 py-0.5 rounded-full font-medium border ${color.text} ${color.border} bg-white/70`}
+                              >
+                                {turno.consultorios.nombre}
+                              </span>
                             )}
                             {/* La columna de la izquierda ya muestra el comienzo, asi
                                 que aca alcanza con hasta cuando llega la ventana. */}

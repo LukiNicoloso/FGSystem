@@ -5,7 +5,7 @@ import TurnoForm from "./TurnoForm";
 import { eliminarTurno } from "./actions";
 import { estadoVisualDeTurno } from "@/lib/turnos";
 
-interface Paciente { id: string; nombre: string; dni: string | null }
+interface Paciente { id: string; nombre: string; dni: string | null; consultorio_id: string | null }
 interface Consultorio { id: string; nombre: string }
 interface Turno {
   id: string;

@@ -24,7 +24,7 @@ export default async function TurnosPage({
       .gte("fecha", inicioMes)
       .lte("fecha", finMes)
       .order("hora", { ascending: true }),
-    supabase.from("pacientes").select("id, nombre, dni").order("nombre"),
+    supabase.from("pacientes").select("id, nombre, dni, consultorio_id").order("nombre"),
     supabase.from("consultorios").select("id, nombre").order("nombre"),
   ]);
 
